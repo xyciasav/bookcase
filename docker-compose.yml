@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  bookcase:
+    build:
+      context: /home/plex/bookcase
+    container_name: bookcase
+    environment:
+      FLASK_ENV: production
+    ports:
+      - "5050:5000"
+    volumes:
+      # Mount entire project (code, templates, db)
+      - /home/plex/bookcase:/app
+      # Explicit mount for receipts (optional, already covered by above)
+      - /home/plex/bookcase/static/receipts:/app/static/receipts

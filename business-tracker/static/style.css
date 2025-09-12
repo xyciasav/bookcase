@@ -1,0 +1,7 @@
+body { background: #0b0c10; color: #e5e7eb; }
+.card, .table, .form-control, .form-select, .btn { border-radius: 0.75rem; }
+.navbar { box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+.table { color: #e5e7eb; }
+.table thead th { color: #a7b0be; }
+.table-striped tbody tr:nth-of-type(odd){ background-color: rgba(255,255,255,0.03); }
+a { color: #93c5fd; }

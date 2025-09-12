@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="mb-4">Transactions</h1>
+
+<form class="row g-2 mb-3" method="get">
+  <div class="col-sm-3">
+    <select class="form-select" name="type">
+      <option value="All" {{ 'selected' if q_type=='All' else '' }}>All Types</option>
+      <option value="Income" {{ 'selected' if q_type=='Income' else '' }}>Income</option>
+      <option value="Expense" {{ 'selected' if q_type=='Expense' else '' }}>Expense</option>
+    </select>
+  </div>
+  <div class="col-sm-3">
+    <select class="form-select" name="status">
+      <option value="All" {{ 'selected' if q_status=='All' else '' }}>All Status</option>
+      <option value="Paid" {{ 'selected' if q_status=='Paid' else '' }}>Paid</option>
+      <option value="Pending" {{ 'selected' if q_status=='Pending' else '' }}>Pending</option>
+    </select>
+  </div>
+  <div class="col-sm-4">
+    <input class="form-control" type="search" name="q" placeholder="Search category, description, or party" value="{{ q_text }}">
+  </div>
+  <div class="col-sm-2 d-grid">
+    <button class="btn btn-primary" type="submit">Filter</button>
+  </div>
+</form>
+
+<div class="table-responsive">
+  <table class="table table-striped align-middle">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Category</th>
+        <th>Party</th>
+        <th>Description</th>
+        <th class="text-end">Amount</th>
+        <th>Status</th>
+        <th>Receipt</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in transactions %}
+      <tr>
+        <td>{{ t.date.strftime('%Y-%m-%d') }}</td>
+        <td>{{ t.type }}</td>
+        <td>{{ t.category }}</td>
+        <td>{{ t.party or '' }}</td>
+        <td>{{ t.description or '' }}</td>
+        <td class="text-end">${{ '%.2f'|format(t.amount) }}</td>
+        <td>{{ t.status }}</td>
+        <td>
+          {% if t.receipt_path %}
+            <a href="{{ '/' + t.receipt_path }}" target="_blank">view</a>
+          {% endif %}
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('delete_transaction', txn_id=t.id) }}" onsubmit="return confirm('Delete this transaction?');">
+            <button class="btn btn-sm btn-outline-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

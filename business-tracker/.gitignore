@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+instance/
+.env
+business.db
+static/receipts/*
+!static/receipts/.gitkeep

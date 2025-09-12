@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="mb-4">Add Transaction</h1>
+
+<form method="post" enctype="multipart/form-data" class="row g-3">
+  <div class="col-md-3">
+    <label class="form-label">Type</label>
+    <select class="form-select" name="type" required>
+      <option value="Income">Income</option>
+      <option value="Expense">Expense</option>
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Status</label>
+    <select class="form-select" name="status" required>
+      <option value="Paid">Paid</option>
+      <option value="Pending">Pending</option>
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Date</label>
+    <input class="form-control" type="date" name="date" required>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Amount ($)</label>
+    <input class="form-control" type="number" step="0.01" min="0" name="amount" required>
+  </div>
+
+  <div class="col-md-4">
+    <label class="form-label">Category</label>
+    <input class="form-control" type="text" name="category" placeholder="e.g., Photography, Equipment" required>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Client / Vendor</label>
+    <input class="form-control" type="text" name="party" placeholder="Client (Income) or Vendor (Expense)">
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Receipt (jpg/png/webp/pdf)</label>
+    <input class="form-control" type="file" name="receipt" accept=".jpg,.jpeg,.png,.webp,.pdf">
+  </div>
+
+  <div class="col-12">
+    <label class="form-label">Description</label>
+    <textarea class="form-control" name="description" rows="3" placeholder="Optional notes"></textarea>
+  </div>
+
+  <div class="col-12 d-flex gap-2">
+    <button class="btn btn-primary" type="submit">Save</button>
+    <a class="btn btn-outline-secondary" href="{{ url_for('transactions') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}
