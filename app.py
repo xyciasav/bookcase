@@ -34,7 +34,7 @@ class Transaction(db.Model):
 
 class WorkOrder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(120), nullable=False)
+    customer = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=True)
     order_type = db.Column(db.String(50), nullable=False)  # Logo, Flyer, etc.
     due_date = db.Column(db.Date, nullable=True)
@@ -213,7 +213,7 @@ def workorders():
 @app.route("/workorders/add", methods=["GET", "POST"])
 def add_workorder():
     if request.method == "POST":
-        title = request.form["title"]
+        customer = request.form["customer"]
         description = request.form.get("description")
         order_type = request.form["order_type"]
         priority = request.form.get("priority", "Medium")
@@ -239,7 +239,7 @@ def add_workorder():
             file_path = save_path
 
         new_order = WorkOrder(
-            title=title,
+            customer=customer,
             description=description,
             order_type=order_type,
             priority=priority,
@@ -259,7 +259,7 @@ def edit_workorder(workorder_id):
     order = WorkOrder.query.get_or_404(workorder_id)
 
     if request.method == "POST":
-        order.title = request.form["title"]
+        order.customer = request.form["customer"]
         order.description = request.form.get("description")
         order.order_type = request.form["order_type"]
         order.status = request.form.get("status")
