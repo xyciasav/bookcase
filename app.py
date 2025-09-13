@@ -36,14 +36,15 @@ class WorkOrder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    order_type = db.Column(db.String(50), nullable=False)  # Logo, Flyer, Wedding Invite, etc.
+    order_type = db.Column(db.String(50), nullable=False)  # Logo, Flyer, etc.
     due_date = db.Column(db.Date, nullable=True)
     status = db.Column(db.String(20), default="Open")  # Open, In Progress, Closed
     file_path = db.Column(db.String(300), nullable=True)  # uploaded file
+    priority = db.Column(db.String(20), default="Medium")  # Low, Medium, High
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
-        return f"<WorkOrder {self.id}: {self.title}>"
+        return f"<WorkOrder {self.id}: {self.title} ({self.priority})>"
 
 # --- Routes ---
 @app.route('/')
@@ -215,10 +216,12 @@ def add_workorder():
         title = request.form["title"]
         description = request.form.get("description")
         order_type = request.form["order_type"]
+        priority = request.form.get("priority", "Medium")
         due_date_str = request.form.get("due_date")
         status = request.form.get("status", "Open")
 
         due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
+
 
         # Handle file upload
         file_path = None
@@ -239,6 +242,7 @@ def add_workorder():
             title=title,
             description=description,
             order_type=order_type,
+            priority=priority,
             due_date=due_date,
             status=status,
             file_path=file_path
@@ -259,7 +263,7 @@ def edit_workorder(workorder_id):
         order.description = request.form.get("description")
         order.order_type = request.form["order_type"]
         order.status = request.form.get("status")
-
+        order.priority = request.form.get("priority", order.priority)
         due_date_str = request.form.get("due_date")
         order.due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
 

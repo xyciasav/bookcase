@@ -44,6 +44,7 @@
         <th>Title</th>
         <th>Description</th>
         <th>Type</th>
+        <th>Priority</th>
         <th>Due Date</th>
         <th>Status</th>
         <th>File</th>
@@ -57,6 +58,7 @@
         <td>{{ o.title }}</td>
         <td>{{ o.description or '' }}</td>
         <td>{{ o.order_type }}</td>
+        <td>{{ order.priority }}</td>
         <td>{{ o.due_date.strftime('%Y-%m-%d') if o.due_date else '' }}</td>
         <td>{{ o.status }}</td>
         <td>
