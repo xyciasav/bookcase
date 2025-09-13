@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="mb-4">Edit Customer</h1>
+
+<form method="POST">
+  <div class="mb-3"><label>Name</label><input class="form-control" name="name" value="{{ customer.name }}" required></div>
+  <div class="mb-3"><label>Email</label><input class="form-control" name="email" value="{{ customer.email }}"></div>
+  <div class="mb-3"><label>Phone</label><input class="form-control" name="phone" value="{{ customer.phone }}"></div>
+  <div class="mb-3"><label>Address</label><input class="form-control" name="address" value="{{ customer.address }}"></div>
+  <div class="mb-3"><label>Notes</label><textarea class="form-control" name="notes">{{ customer.notes }}</textarea></div>
+  <button type="submit" class="btn btn-success">Update</button>
+  <a href="{{ url_for('customers') }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}
