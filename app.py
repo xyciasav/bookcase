@@ -39,6 +39,7 @@ class Transaction(db.Model):
 class WorkOrder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customer.id"), nullable=False)
+    booking_id = db.Column(db.Integer, db.ForeignKey("booking.id"), nullable=True)  # 🔹 optional link
     description = db.Column(db.Text, nullable=True)
     order_type = db.Column(db.String(50), nullable=False)
     due_date = db.Column(db.Date, nullable=True)
@@ -48,8 +49,8 @@ class WorkOrder(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
-        return f"<WorkOrder {self.id}: {self.title} ({self.priority})>"
-
+        return f"<WorkOrder {self.id}: {self.order_type} ({self.priority})>"
+    
 class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customer.id"), nullable=False)
@@ -60,6 +61,9 @@ class Booking(db.Model):
     paid_status = db.Column(db.String(10), default="Pending")  # Paid | Pending | Partial
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # 🔹 relationship to WorkOrders
+    workorders = db.relationship("WorkOrder", backref="booking_obj", lazy=True)
 
     def __repr__(self):
         return f"<Booking {self.id}: {self.customer_obj.name if self.customer_obj else self.customer_id} - {self.booking_type}>"
