@@ -32,6 +32,14 @@ class Transaction(db.Model):
     receipt_path = db.Column(db.String(300), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class WorkOrder(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(120), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    asset = db.Column(db.String(120), nullable=True)   # what equipment/job it's for
+    due_date = db.Column(db.Date, nullable=True)
+    status = db.Column(db.String(20), default="Open")  # Open, In Progress, Closed
+
 # --- Routes ---
 @app.route('/')
 def index():
