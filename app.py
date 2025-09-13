@@ -2,9 +2,6 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from datetime import datetime
-from datetime import date
-from app import db
-from models import WorkOrder
 import os
 
 # --- Config ---
@@ -77,31 +74,7 @@ def dashboard():
                            pending_expense=pending_expense or 0,
                            recent=recent)
 
-@app.route('/workorders')
-def workorders():
-    orders = WorkOrder.query.order_by(WorkOrder.due_date).all()
-    return render_template('workorders.html', orders=orders)
-
-@app.route('/workorders/add', methods=['GET', 'POST'])
-def add_workorder():
-    if request.method == 'POST':
-        title = request.form['title']
-        description = request.form['description']
-        asset = request.form['asset']
-        due_date = datetime.strptime(request.form['due_date'], "%Y-%m-%d").date()
-
-        new_order = WorkOrder(
-            title=title,
-            description=description,
-            asset=asset,
-            due_date=due_date
-        )
-        db.session.add(new_order)
-        db.session.commit()
-        flash("Work order added successfully!", "success")
-        return redirect(url_for('workorders'))
-
-    return render_template('add_workorder.html')
+# ------------------ Transactions ------------------
 
 @app.route('/transactions')
 def transactions():
@@ -130,23 +103,20 @@ def transactions():
 @app.route('/add', methods=['GET', 'POST'])
 def add_transaction():
     if request.method == 'POST':
-        # Parse form
         t_type = request.form.get('type')
         category = request.form.get('category')
         party = request.form.get('party')
         description = request.form.get('description')
         amount = float(request.form.get('amount', 0) or 0)
         status = request.form.get('status')
-        date_str = request.form.get('date')  # yyyy-mm-dd
+        date_str = request.form.get('date')
         date_val = datetime.strptime(date_str, '%Y-%m-%d').date() if date_str else datetime.utcnow().date()
 
-        # Handle file
         receipt_path = None
         file = request.files.get('receipt')
         if file and file.filename and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            # Prevent overwrite by appending a counter if exists
             base, ext = os.path.splitext(filename)
             counter = 1
             while os.path.exists(save_path):
@@ -171,26 +141,11 @@ def add_transaction():
         return redirect(url_for('transactions'))
     return render_template('add_transaction.html')
 
-@app.route('/delete/<int:txn_id>', methods=['POST'])
-def delete_transaction(txn_id):
-    t = Transaction.query.get_or_404(txn_id)
-    # Optionally delete associated receipt file
-    if t.receipt_path and os.path.exists(t.receipt_path):
-        try:
-            os.remove(t.receipt_path)
-        except Exception:
-            pass
-    db.session.delete(t)
-    db.session.commit()
-    return redirect(url_for('transactions'))
-
-# Edit transaction
-@app.route("/edit/<int:transaction_id>", methods=["GET", "POST"])
+@app.route('/edit/<int:transaction_id>', methods=['GET', 'POST'])
 def edit_transaction(transaction_id):
     txn = Transaction.query.get_or_404(transaction_id)
-
     if request.method == "POST":
-        txn.date = request.form["date"]
+        txn.date = datetime.strptime(request.form["date"], "%Y-%m-%d").date()
         txn.type = request.form["type"]
         txn.category = request.form["category"]
         txn.party = request.form.get("party")
@@ -198,12 +153,8 @@ def edit_transaction(transaction_id):
         txn.amount = float(request.form["amount"])
         txn.status = request.form["status"]
 
-        # ✅ Convert string to Python date object
-        txn.date = datetime.strptime(request.form["date"], "%Y-%m-%d").date()
-
-        # If user uploads a new receipt, save it
         receipt = request.files.get("receipt")
-        if receipt:
+        if receipt and receipt.filename:
             path = os.path.join("static/receipts", receipt.filename)
             receipt.save(path)
             txn.receipt_path = path
@@ -214,13 +165,25 @@ def edit_transaction(transaction_id):
 
     return render_template("edit_transaction.html", txn=txn)
 
-# List work orders
+@app.route('/delete/<int:txn_id>', methods=['POST'])
+def delete_transaction(txn_id):
+    t = Transaction.query.get_or_404(txn_id)
+    if t.receipt_path and os.path.exists(t.receipt_path):
+        try:
+            os.remove(t.receipt_path)
+        except Exception:
+            pass
+    db.session.delete(t)
+    db.session.commit()
+    return redirect(url_for('transactions'))
+
+# ------------------ Work Orders ------------------
+
 @app.route("/workorders")
 def workorders():
     all_orders = WorkOrder.query.order_by(WorkOrder.due_date.asc()).all()
     return render_template("workorders.html", workorders=all_orders)
 
-# Add new work order
 @app.route("/workorders/add", methods=["GET", "POST"])
 def add_workorder():
     if request.method == "POST":
@@ -230,9 +193,7 @@ def add_workorder():
         due_date_str = request.form.get("due_date")
         status = request.form.get("status", "Open")
 
-        due_date = None
-        if due_date_str:
-            due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date()
+        due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
 
         new_order = WorkOrder(
             title=title,
@@ -248,22 +209,17 @@ def add_workorder():
 
     return render_template("add_workorder.html")
 
-# Edit work order
 @app.route("/workorders/edit/<int:workorder_id>", methods=["GET", "POST"])
 def edit_workorder(workorder_id):
     order = WorkOrder.query.get_or_404(workorder_id)
-
     if request.method == "POST":
         order.title = request.form["title"]
         order.description = request.form.get("description")
         order.asset = request.form.get("asset")
-        due_date_str = request.form.get("due_date")
         order.status = request.form.get("status")
 
-        if due_date_str:
-            order.due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date()
-        else:
-            order.due_date = None
+        due_date_str = request.form.get("due_date")
+        order.due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
 
         db.session.commit()
         flash("Work order updated successfully!", "success")
@@ -271,7 +227,6 @@ def edit_workorder(workorder_id):
 
     return render_template("add_workorder.html", order=order)
 
-# Delete work order
 @app.route("/workorders/delete/<int:workorder_id>", methods=["POST"])
 def delete_workorder(workorder_id):
     order = WorkOrder.query.get_or_404(workorder_id)
@@ -280,6 +235,7 @@ def delete_workorder(workorder_id):
     flash("Work order deleted!", "danger")
     return redirect(url_for("workorders"))
 
+# ------------------ Run ------------------
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
