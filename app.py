@@ -608,6 +608,37 @@ def seed_job_types():
             db.session.add(JobType(name=d))
         db.session.commit()
 
+
+# ------------------ Settings (Job Types) ------------------
+
+@app.route("/settings/jobtypes")
+def jobtypes():
+    types = JobType.query.order_by(JobType.name.asc()).all()
+    return render_template("jobtypes.html", job_types=types)
+
+@app.route("/settings/jobtypes/add", methods=["POST"])
+def add_jobtype():
+    name = request.form.get("name")
+    if name:
+        # prevent duplicates
+        existing = JobType.query.filter_by(name=name).first()
+        if not existing:
+            db.session.add(JobType(name=name))
+            db.session.commit()
+            flash("Job type added!", "success")
+        else:
+            flash("Job type already exists!", "warning")
+    return redirect(url_for("jobtypes"))
+
+@app.route("/settings/jobtypes/delete/<int:type_id>", methods=["POST"])
+def delete_jobtype(type_id):
+    jobtype = JobType.query.get_or_404(type_id)
+    db.session.delete(jobtype)
+    db.session.commit()
+    flash("Job type deleted!", "danger")
+    return redirect(url_for("jobtypes"))
+
+
 # ------------------ Run ------------------
 @app.context_processor
 def inject_version():
