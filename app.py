@@ -69,29 +69,41 @@ def index():
 
 @app.route('/dashboard')
 def dashboard():
-    # Totals (paid only)
+    # --- Transactions ---
     income_paid = db.session.query(db.func.coalesce(db.func.sum(Transaction.amount), 0.0))\
         .filter_by(type='Income', status='Paid').scalar()
     expense_paid = db.session.query(db.func.coalesce(db.func.sum(Transaction.amount), 0.0))\
         .filter_by(type='Expense', status='Paid').scalar()
     profit = (income_paid or 0.0) - (expense_paid or 0.0)
 
-    # Pending counts
     pending_income = db.session.query(db.func.count(Transaction.id))\
         .filter_by(type='Income', status='Pending').scalar()
     pending_expense = db.session.query(db.func.count(Transaction.id))\
         .filter_by(type='Expense', status='Pending').scalar()
 
-    # Recent transactions
     recent = Transaction.query.order_by(Transaction.date.desc(), Transaction.id.desc()).limit(10).all()
 
-    return render_template('dashboard.html',
-                           income_paid=income_paid or 0.0,
-                           expense_paid=expense_paid or 0.0,
-                           profit=profit or 0.0,
-                           pending_income=pending_income or 0,
-                           pending_expense=pending_expense or 0,
-                           recent=recent)
+    # --- Bookings ---
+    total_bookings = db.session.query(db.func.count(Booking.id)).scalar()
+    total_expected_income = db.session.query(db.func.coalesce(db.func.sum(Booking.expected_income), 0.0)).scalar()
+    pending_bookings = db.session.query(db.func.count(Booking.id))\
+        .filter(Booking.paid_status != "Paid").scalar()
+    paid_bookings = db.session.query(db.func.count(Booking.id))\
+        .filter(Booking.paid_status == "Paid").scalar()
+
+    return render_template(
+        'dashboard.html',
+        income_paid=income_paid or 0.0,
+        expense_paid=expense_paid or 0.0,
+        profit=profit or 0.0,
+        pending_income=pending_income or 0,
+        pending_expense=pending_expense or 0,
+        recent=recent,
+        total_bookings=total_bookings or 0,
+        total_expected_income=total_expected_income or 0.0,
+        pending_bookings=pending_bookings or 0,
+        paid_bookings=paid_bookings or 0
+    )
 
 # ------------------ Transactions ------------------
 

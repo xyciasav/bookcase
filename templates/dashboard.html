@@ -27,6 +27,42 @@
       </div>
     </div>
   </div>
+  <!-- Bookings Section -->
+<h2 class="mt-4">Bookings Overview</h2>
+<div class="row">
+  <div class="col-md-3">
+    <div class="card text-bg-info mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Total Bookings</h5>
+        <p class="card-text">{{ total_bookings }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-bg-warning mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Pending</h5>
+        <p class="card-text">{{ pending_bookings }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-bg-success mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Paid</h5>
+        <p class="card-text">{{ paid_bookings }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-bg-secondary mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Expected Income</h5>
+        <p class="card-text">${{ '%.2f'|format(total_expected_income) }}</p>
+      </div>
+    </div>
+  </div>
+</div>
   <div class="col-md-3">
     <div class="card shadow-sm">
       <div class="card-body">
