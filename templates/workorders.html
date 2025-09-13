@@ -2,8 +2,6 @@
 {% block content %}
 <h1 class="mb-4">Work Orders</h1>
 
-<a href="{{ url_for('add_workorder') }}" class="btn btn-primary mb-3">Add Work Order</a>
-
 <form class="row g-2 mb-3" method="get">
   <div class="col-sm-3">
     <select class="form-select" name="type">
@@ -17,7 +15,6 @@
       <option value="Save the Date" {{ 'selected' if q_type=='Save the Date' else '' }}>Save the Date</option>
     </select>
   </div>
-
   <div class="col-sm-3">
     <select class="form-select" name="status">
       <option value="All" {{ 'selected' if q_status=='All' else '' }}>All Status</option>
@@ -26,49 +23,47 @@
       <option value="Closed" {{ 'selected' if q_status=='Closed' else '' }}>Closed</option>
     </select>
   </div>
-
   <div class="col-sm-4">
-    <input class="form-control" type="search" name="q" placeholder="Search title or description" value="{{ q_text }}">
+    <input class="form-control" type="search" name="q" placeholder="Search title/description" value="{{ q_text }}">
   </div>
-
   <div class="col-sm-2 d-grid">
     <button class="btn btn-primary" type="submit">Filter</button>
   </div>
 </form>
 
+<div class="mb-3">
+  <a href="{{ url_for('add_workorder') }}" class="btn btn-success">+ Add Work Order</a>
+</div>
+
 <div class="table-responsive">
   <table class="table table-striped align-middle">
     <thead>
       <tr>
-        <th>ID</th>
         <th>Title</th>
-        <th>Description</th>
         <th>Type</th>
         <th>Priority</th>
-        <th>Due Date</th>
         <th>Status</th>
+        <th>Due Date</th>
         <th>File</th>
-        <th>Actions</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
-      {% for o in workorders %}
+      {% for order in workorders %}
       <tr>
-        <td>{{ o.id }}</td>
-        <td>{{ o.title }}</td>
-        <td>{{ o.description or '' }}</td>
-        <td>{{ o.order_type }}</td>
+        <td>{{ order.title }}</td>
+        <td>{{ order.order_type }}</td>
         <td>{{ order.priority }}</td>
-        <td>{{ o.due_date.strftime('%Y-%m-%d') if o.due_date else '' }}</td>
-        <td>{{ o.status }}</td>
+        <td>{{ order.status }}</td>
+        <td>{{ order.due_date.strftime('%Y-%m-%d') if order.due_date else '' }}</td>
         <td>
-          {% if o.file_path %}
-            <a href="{{ '/' + o.file_path }}" target="_blank">view</a>
+          {% if order.file_path %}
+            <a href="{{ '/' + order.file_path }}" target="_blank">View</a>
           {% endif %}
         </td>
         <td>
-          <a href="{{ url_for('edit_workorder', workorder_id=o.id) }}" class="btn btn-warning btn-sm">Edit</a>
-          <form action="{{ url_for('delete_workorder', workorder_id=o.id) }}" method="post" style="display:inline;">
+          <a href="{{ url_for('edit_workorder', workorder_id=order.id) }}" class="btn btn-warning btn-sm">Edit</a>
+          <form action="{{ url_for('delete_workorder', workorder_id=order.id) }}" method="post" style="display:inline;">
             <button type="submit" class="btn btn-danger btn-sm">Delete</button>
           </form>
         </td>

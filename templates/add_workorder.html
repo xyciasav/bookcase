@@ -1,24 +1,25 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1 class="mb-4">{{ 'Edit' if order else 'Add' }} Work Order</h1>
+<h1 class="mb-4">Add Work Order</h1>
 
 <form method="post" enctype="multipart/form-data" class="row g-3">
   <div class="col-md-6">
     <label class="form-label">Title</label>
-    <input type="text" name="title" class="form-control" value="{{ order.title if order else '' }}" required>
+    <input type="text" name="title" class="form-control" required>
   </div>
-
   <div class="col-md-6">
-    <label class="form-label">Order Type</label>
-    <select class="form-select" name="order_type" required>
-      {% set types = ["Logo", "Logo + Branding", "Flyer", "Birthday Invite", "Wedding Invite", "Engagement Announcement", "Save the Date"] %}
-      {% for t in types %}
-      <option value="{{ t }}" {% if order and order.order_type==t %}selected{% endif %}>{{ t }}</option>
-      {% endfor %}
+    <label class="form-label">Type</label>
+    <select name="order_type" class="form-select" required>
+      <option value="Logo">Logo</option>
+      <option value="Logo + Branding">Logo + Branding</option>
+      <option value="Flyer">Flyer</option>
+      <option value="Birthday Invite">Birthday Invite</option>
+      <option value="Wedding Invite">Wedding Invite</option>
+      <option value="Engagement Announcement">Engagement Announcement</option>
+      <option value="Save the Date">Save the Date</option>
     </select>
   </div>
-
-  <div class="mb-3">
+  <div class="col-md-6">
     <label class="form-label">Priority</label>
     <select name="priority" class="form-select">
       <option value="Low">Low</option>
@@ -26,38 +27,28 @@
       <option value="High">High</option>
     </select>
   </div>
-
-  <div class="col-md-12">
-    <label class="form-label">Description</label>
-    <textarea name="description" class="form-control">{{ order.description if order else '' }}</textarea>
-  </div>
-
-  <div class="col-md-4">
+  <div class="col-md-6">
     <label class="form-label">Due Date</label>
-    <input type="date" name="due_date" class="form-control"
-           value="{{ order.due_date.strftime('%Y-%m-%d') if order and order.due_date else '' }}">
+    <input type="date" name="due_date" class="form-control">
   </div>
-
-  <div class="col-md-4">
+  <div class="col-12">
+    <label class="form-label">Description</label>
+    <textarea name="description" class="form-control" rows="3"></textarea>
+  </div>
+  <div class="col-12">
+    <label class="form-label">File Upload</label>
+    <input type="file" name="file" class="form-control">
+  </div>
+  <div class="col-12">
     <label class="form-label">Status</label>
-    <select class="form-select" name="status">
-      {% set statuses = ["Open", "In Progress", "Closed"] %}
-      {% for s in statuses %}
-      <option value="{{ s }}" {% if order and order.status==s %}selected{% endif %}>{{ s }}</option>
-      {% endfor %}
+    <select name="status" class="form-select">
+      <option value="Open">Open</option>
+      <option value="In Progress">In Progress</option>
+      <option value="Closed">Closed</option>
     </select>
   </div>
-
-  <div class="col-md-4">
-    <label class="form-label">File</label>
-    <input type="file" name="file" class="form-control">
-    {% if order and order.file_path %}
-      <small>Current: <a href="{{ '/' + order.file_path }}" target="_blank">view</a></small>
-    {% endif %}
-  </div>
-  
   <div class="col-12">
-    <button type="submit" class="btn btn-success">Save</button>
+    <button type="submit" class="btn btn-primary">Save</button>
     <a href="{{ url_for('workorders') }}" class="btn btn-secondary">Cancel</a>
   </div>
 </form>
