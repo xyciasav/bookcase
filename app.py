@@ -62,7 +62,7 @@ class Booking(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
-        return f"<Booking {self.id}: {self.customer} - {self.booking_type}>"
+        return f"<Booking {self.id}: {self.customer_obj.name if self.customer_obj else self.customer_id} - {self.booking_type}>"
     
 class Customer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
