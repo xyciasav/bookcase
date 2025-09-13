@@ -2,6 +2,49 @@
 {% block content %}
 <h1 class="mb-4">Work Orders</h1>
 
+<div class="row text-center">
+  <div class="col-md-2">
+    <div class="card">
+      <div class="card-body">
+        <h5>Total</h5>
+        <p class="fs-4">{{ total_orders }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card">
+      <div class="card-body">
+        <h5>Open</h5>
+        <p class="fs-4">{{ open_orders }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card">
+      <div class="card-body">
+        <h5>In Progress</h5>
+        <p class="fs-4">{{ in_progress_orders }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card">
+      <div class="card-body">
+        <h5>Closed</h5>
+        <p class="fs-4">{{ closed_orders }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card">
+      <div class="card-body">
+        <h5>High Priority</h5>
+        <p class="fs-4 text-danger">{{ high_priority }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <form class="row g-2 mb-3" method="get">
   <div class="col-sm-3">
     <select class="form-select" name="type">
