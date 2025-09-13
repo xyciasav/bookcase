@@ -385,8 +385,8 @@ def add_booking():
         expected_income = float(request.form.get("expected_income", 0))
         paid_status = request.form.get("paid_status", "Pending")
         notes = request.form.get("notes")
-        amount_paid = float(request.form.get("amount_paid", 0))
 
+        # Create booking
         new_booking = Booking(
             customer=customer,
             booking_type=booking_type,
@@ -399,7 +399,7 @@ def add_booking():
         db.session.add(new_booking)
         db.session.commit()
 
-        # 🔹 Create transactions
+        # Create Transaction ONLY if money is received
         if paid_status == "Paid":
             txn = Transaction(
                 type="Income",
@@ -408,39 +408,26 @@ def add_booking():
                 description=f"{booking_type} Booking",
                 amount=expected_income,
                 status="Paid",
-                date=event_date
+                date=datetime.utcnow().date()
             )
             db.session.add(txn)
+            db.session.commit()
 
         elif paid_status == "Partial":
-            # 1. Paid part
-            if amount_paid > 0:
-                paid_txn = Transaction(
+            partial_amount = float(request.form.get("partial_amount", 0))
+            if partial_amount > 0:
+                txn = Transaction(
                     type="Income",
                     category="Booking",
                     party=customer,
                     description=f"{booking_type} Booking (Partial Payment)",
-                    amount=amount_paid,
+                    amount=partial_amount,
                     status="Paid",
-                    date=event_date
+                    date=datetime.utcnow().date()
                 )
-                db.session.add(paid_txn)
+                db.session.add(txn)
+                db.session.commit()
 
-            # 2. Pending balance
-            balance = expected_income - amount_paid
-            if balance > 0:
-                pending_txn = Transaction(
-                    type="Income",
-                    category="Booking",
-                    party=customer,
-                    description=f"{booking_type} Booking (Remaining Balance)",
-                    amount=balance,
-                    status="Pending",
-                    date=event_date
-                )
-                db.session.add(pending_txn)
-
-        db.session.commit()
         flash("Booking added successfully!", "success")
         return redirect(url_for("bookings"))
 
