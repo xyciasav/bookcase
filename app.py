@@ -600,13 +600,15 @@ def view_customer(customer_id):
     return render_template("view_customer.html", customer=customer)
 
 
-@app.before_first_request
+@app.before_request
 def seed_job_types():
-    if JobType.query.count() == 0:
-        defaults = ["Design", "Photography", "Videography", "Print", "Consultation", "Other"]
-        for d in defaults:
-            db.session.add(JobType(name=d))
-        db.session.commit()
+    if not hasattr(app, "jobtypes_seeded"):
+        if JobType.query.count() == 0:
+            defaults = ["Design", "Photography", "Videography", "Print", "Consultation", "Other"]
+            for d in defaults:
+                db.session.add(JobType(name=d))
+            db.session.commit()
+        app.jobtypes_seeded = True
 
 
 # ------------------ Settings (Job Types) ------------------
