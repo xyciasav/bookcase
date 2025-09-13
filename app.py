@@ -423,7 +423,7 @@ def add_booking():
                     description=f"{booking_type} Booking (Partial Payment)",
                     amount=partial_amount,
                     status="Paid",
-                    date=datetime.utcnow().date()
+                    date=datetime.utcnow().date(),
                 )
                 db.session.add(txn)
                 db.session.commit()
