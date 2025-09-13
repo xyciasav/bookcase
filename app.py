@@ -425,9 +425,8 @@ def edit_workorder(workorder_id):
         return redirect(url_for("workorders"))
 
     customers = Customer.query.order_by(Customer.name.asc()).all()
-    job_types = JobType.query.order_by(JobType.name.asc()).all()   # 🔹 ADD THIS
+    job_types = JobType.query.order_by(JobType.name.asc()).all()   # ✅ ensure this is passed
     return render_template("edit_workorder.html", order=order, customers=customers, job_types=job_types)
-
 
 @app.route("/workorders/delete/<int:workorder_id>", methods=["POST"])
 def delete_workorder(workorder_id):
