@@ -7,7 +7,7 @@ import csv
 from flask import Response
 
 # --- Config ---
-APP_VERSION = "v0.4.3-dev"  # update manually when you push changes
+APP_VERSION = "v0.4.4-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -499,7 +499,7 @@ def add_booking():
         db.session.add(new_booking)
         db.session.commit()
 
-        # Transaction logging
+        # --- Transaction logging ---
         customer = Customer.query.get(customer_id)
         if paid_status == "Paid":
             txn = Transaction(
@@ -531,9 +531,10 @@ def add_booking():
         flash("Booking added successfully!", "success")
         return redirect(url_for("bookings"))
 
+    # --- GET request: fetch customers & job types ---
     customers = Customer.query.order_by(Customer.name.asc()).all()
-    return render_template("add_booking.html", customers=customers)
-
+    job_types = JobType.query.order_by(JobType.name.asc()).all()
+    return render_template("add_booking.html", customers=customers, job_types=job_types)
 
 @app.route("/bookings/edit/<int:booking_id>", methods=["GET", "POST"])
 def edit_booking(booking_id):
