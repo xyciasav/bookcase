@@ -39,9 +39,10 @@ class Transaction(db.Model):
 class WorkOrder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customer.id"), nullable=False)
-    booking_id = db.Column(db.Integer, db.ForeignKey("booking.id"), nullable=True)  # 🔹 optional link
+    booking_id = db.Column(db.Integer, db.ForeignKey("booking.id"), nullable=True)
     description = db.Column(db.Text, nullable=True)
     order_type = db.Column(db.String(50), nullable=False)
+    price = db.Column(db.Float, default=0.0)   # 🔹 NEW
     due_date = db.Column(db.Date, nullable=True)
     status = db.Column(db.String(20), default="New")
     file_path = db.Column(db.String(300), nullable=True)
@@ -87,10 +88,31 @@ class Customer(db.Model):
 class JobType(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
+    base_price = db.Column(db.Float, default=0.0)   # 🔹 add this
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
-        return f"<JobType {self.name}>"
+        return f"<JobType {self.name} - ${self.base_price:.2f}>"
+
+class Invoice(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customer.id"), nullable=False)
+    total = db.Column(db.Float, default=0.0)
+    status = db.Column(db.String(20), default="Draft")  # Draft | Sent | Paid
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    items = db.relationship("InvoiceItem", backref="invoice", lazy=True)
+
+class InvoiceItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey("invoice.id"), nullable=False)
+    description = db.Column(db.String(200))
+    price = db.Column(db.Float, default=0.0)
+    quantity = db.Column(db.Integer, default=1)
+
+    def subtotal(self):
+        return self.price * self.quantity
+
 
 # --- Routes ---
 @app.route('/')
@@ -374,15 +396,18 @@ def add_workorder():
         priority = request.form.get("priority", "Medium")
         due_date_str = request.form.get("due_date")
         status = request.form.get("status", "New")
-        booking_id = request.form.get("booking_id") or request.args.get("booking_id")
+
+        # 🔹 lookup price from JobType
+        jt = JobType.query.filter_by(name=order_type).first()
+        price = jt.base_price if jt else 0.0
 
         due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
 
         new_order = WorkOrder(
             customer_id=customer_id,
-            booking_id=int(booking_id) if booking_id else None,   # 🔹 link to booking
             description=description,
             order_type=order_type,
+            price=price,        # 🔹 store it
             priority=priority,
             due_date=due_date,
             status=status
@@ -391,23 +416,6 @@ def add_workorder():
         db.session.commit()
         flash("Work order added successfully!", "success")
         return redirect(url_for("workorders"))
-
-    # --- Preselect customer if booking_id was passed ---
-    booking_id = request.args.get("booking_id")
-    preselected_customer = None
-    if booking_id:
-        booking = Booking.query.get(int(booking_id))
-        if booking:
-            preselected_customer = booking.customer_id
-
-    customers = Customer.query.order_by(Customer.name.asc()).all()
-    job_types = JobType.query.order_by(JobType.name.asc()).all()
-    return render_template(
-        "add_workorder.html",
-        customers=customers,
-        job_types=job_types,
-        preselected_customer=preselected_customer
-    )
 
 @app.route("/workorders/edit/<int:workorder_id>", methods=["GET", "POST"])
 def edit_workorder(workorder_id):
@@ -611,6 +619,35 @@ def seed_job_types():
             db.session.commit()
         app.jobtypes_seeded = True
 
+# -------------------- Invoices -----------------------------
+
+@app.route("/invoices/create/<int:customer_id>", methods=["POST"])
+def create_invoice(customer_id):
+    customer = Customer.query.get_or_404(customer_id)
+    workorder_ids = request.form.getlist("workorders")  # list of selected orders
+    
+    invoice = Invoice(customer_id=customer.id, status="Draft")
+    db.session.add(invoice)
+    db.session.commit()
+
+    total = 0.0
+    for wid in workorder_ids:
+        order = WorkOrder.query.get(int(wid))
+        if order:
+            item = InvoiceItem(
+                invoice_id=invoice.id,
+                description=order.order_type,
+                price=order.price,
+                quantity=1
+            )
+            total += order.price
+            db.session.add(item)
+
+    invoice.total = total
+    db.session.commit()
+
+    flash("Invoice created!", "success")
+    return redirect(url_for("view_invoice", invoice_id=invoice.id))
 
 # ------------------ Settings (Job Types) ------------------
 
@@ -622,11 +659,11 @@ def jobtypes():
 @app.route("/settings/jobtypes/add", methods=["POST"])
 def add_jobtype():
     name = request.form.get("name")
+    price = float(request.form.get("price", 0))
     if name:
-        # prevent duplicates
         existing = JobType.query.filter_by(name=name).first()
         if not existing:
-            db.session.add(JobType(name=name))
+            db.session.add(JobType(name=name, base_price=price))
             db.session.commit()
             flash("Job type added!", "success")
         else:
