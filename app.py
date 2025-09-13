@@ -362,11 +362,6 @@ def delete_workorder(workorder_id):
     flash("Work order deleted!", "danger")
     return redirect(url_for("workorders"))
 
-@app.context_processor
-def inject_version():
-    return dict(version="v0.2.2-dev")
-
-
 # ------------------ Bookings ------------------
 
 @app.route("/bookings")
@@ -437,6 +432,10 @@ def delete_booking(booking_id):
 
 
 # ------------------ Run ------------------
+@app.context_processor
+def inject_version():
+    return dict(version=APP_VERSION)
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
