@@ -349,7 +349,7 @@ def workorders():
 @app.route("/workorders/add", methods=["GET", "POST"])
 def add_workorder():
     if request.method == "POST":
-        customer = request.form["customer"]
+        customer_id = int(request.form["customer_id"])
         description = request.form.get("description")
         order_type = request.form["order_type"]
         priority = request.form.get("priority", "Medium")
@@ -357,7 +357,6 @@ def add_workorder():
         status = request.form.get("status", "New")
 
         due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
-
 
         # Handle file upload
         file_path = None
@@ -375,7 +374,7 @@ def add_workorder():
             file_path = save_path
 
         new_order = WorkOrder(
-            customer=customer,
+            customer_id=customer_id,
             description=description,
             order_type=order_type,
             priority=priority,
@@ -388,14 +387,15 @@ def add_workorder():
         flash("Work order added successfully!", "success")
         return redirect(url_for("workorders"))
 
-    return render_template("add_workorder.html")
+    customers = Customer.query.order_by(Customer.name.asc()).all()
+    return render_template("add_workorder.html", customers=customers)
 
 @app.route("/workorders/edit/<int:workorder_id>", methods=["GET", "POST"])
 def edit_workorder(workorder_id):
     order = WorkOrder.query.get_or_404(workorder_id)
 
     if request.method == "POST":
-        order.customer = request.form["customer"]
+        order.customer_id = int(request.form["customer_id"])
         order.description = request.form.get("description")
         order.order_type = request.form["order_type"]
         order.status = request.form.get("status")
@@ -415,7 +415,8 @@ def edit_workorder(workorder_id):
         flash("Work order updated successfully!", "success")
         return redirect(url_for("workorders"))
 
-    return render_template("edit_workorder.html", order=order)
+    customers = Customer.query.order_by(Customer.name.asc()).all()
+    return render_template("edit_workorder.html", order=order, customers=customers)
 
 @app.route("/workorders/delete/<int:workorder_id>", methods=["POST"])
 def delete_workorder(workorder_id):
@@ -445,7 +446,7 @@ def bookings():
 @app.route("/bookings/add", methods=["GET", "POST"])
 def add_booking():
     if request.method == "POST":
-        customer = request.form["customer"]
+        customer_id = int(request.form["customer_id"])
         booking_type = request.form["booking_type"]
         event_date = datetime.strptime(request.form["event_date"], "%Y-%m-%d").date()
         secondary_date_str = request.form.get("secondary_date")
@@ -454,9 +455,8 @@ def add_booking():
         paid_status = request.form.get("paid_status", "Pending")
         notes = request.form.get("notes")
 
-        # Create booking
         new_booking = Booking(
-            customer=customer,
+            customer_id=customer_id,
             booking_type=booking_type,
             event_date=event_date,
             secondary_date=secondary_date,
@@ -467,19 +467,19 @@ def add_booking():
         db.session.add(new_booking)
         db.session.commit()
 
-        # Create Transaction ONLY if money is received
+        # Transaction logging
+        customer = Customer.query.get(customer_id)
         if paid_status == "Paid":
             txn = Transaction(
                 type="Income",
                 category="Booking",
-                party=customer,
+                party=customer.name,
                 description=f"{booking_type} Booking",
                 amount=expected_income,
                 status="Paid",
                 date=datetime.utcnow().date()
             )
             db.session.add(txn)
-            db.session.commit()
 
         elif paid_status == "Partial":
             partial_amount = float(request.form.get("partial_amount", 0))
@@ -487,63 +487,7 @@ def add_booking():
                 txn = Transaction(
                     type="Income",
                     category="Booking",
-                    party=customer,
-                    description=f"{booking_type} Booking (Partial Payment)",
-                    amount=partial_amount,
-                    status="Paid",
-                    date=datetime.utcnow().date(),
-                )
-                db.session.add(txn)
-                db.session.commit()
-
-        flash("Booking added successfully!", "success")
-        return redirect(url_for("bookings"))
-
-    return render_template("add_booking.html")
-
-@app.route("/bookings/edit/<int:booking_id>", methods=["GET", "POST"])
-def edit_booking(booking_id):
-    booking = Booking.query.get_or_404(booking_id)
-
-    if request.method == "POST":
-        customer = request.form["customer"]
-        booking_type = request.form["booking_type"]
-        event_date = datetime.strptime(request.form["event_date"], "%Y-%m-%d").date()
-        secondary_date_str = request.form.get("secondary_date")
-        secondary_date = datetime.strptime(secondary_date_str, "%Y-%m-%d").date() if secondary_date_str else None
-        expected_income = float(request.form.get("expected_income", 0))
-        paid_status = request.form.get("paid_status", "Pending")
-        notes = request.form.get("notes")
-
-        # Update booking
-        booking.customer = customer
-        booking.booking_type = booking_type
-        booking.event_date = event_date
-        booking.secondary_date = secondary_date
-        booking.expected_income = expected_income
-        booking.paid_status = paid_status
-        booking.notes = notes
-
-        # --- Transaction logging ---
-        if paid_status == "Paid":
-            txn = Transaction(
-                type="Income",
-                category="Booking",
-                party=customer,
-                description=f"{booking_type} Booking (Paid in Full)",
-                amount=expected_income,
-                status="Paid",
-                date=datetime.utcnow().date(),
-            )
-            db.session.add(txn)
-
-        elif paid_status == "Partial":
-            partial_amount = float(request.form.get("partial_amount", 0))
-            if partial_amount > 0:
-                txn = Transaction(
-                    type="Income",
-                    category="Booking",
-                    party=customer,
+                    party=customer.name,
                     description=f"{booking_type} Booking (Partial Payment)",
                     amount=partial_amount,
                     status="Paid",
@@ -552,10 +496,33 @@ def edit_booking(booking_id):
                 db.session.add(txn)
 
         db.session.commit()
+        flash("Booking added successfully!", "success")
+        return redirect(url_for("bookings"))
+
+    customers = Customer.query.order_by(Customer.name.asc()).all()
+    return render_template("add_booking.html", customers=customers)
+
+
+@app.route("/bookings/edit/<int:booking_id>", methods=["GET", "POST"])
+def edit_booking(booking_id):
+    booking = Booking.query.get_or_404(booking_id)
+
+    if request.method == "POST":
+        booking.customer_id = int(request.form["customer_id"])
+        booking.booking_type = request.form["booking_type"]
+        booking.event_date = datetime.strptime(request.form["event_date"], "%Y-%m-%d").date()
+        secondary_date_str = request.form.get("secondary_date")
+        booking.secondary_date = datetime.strptime(secondary_date_str, "%Y-%m-%d").date() if secondary_date_str else None
+        booking.expected_income = float(request.form.get("expected_income", 0))
+        booking.paid_status = request.form.get("paid_status", "Pending")
+        booking.notes = request.form.get("notes")
+
+        db.session.commit()
         flash("Booking updated successfully!", "success")
         return redirect(url_for("bookings"))
 
-    return render_template("edit_booking.html", booking=booking)
+    customers = Customer.query.order_by(Customer.name.asc()).all()
+    return render_template("edit_booking.html", booking=booking, customers=customers)
 
 @app.route("/bookings/delete/<int:booking_id>", methods=["POST"])
 def delete_booking(booking_id):
