@@ -251,17 +251,32 @@ def workorders():
         like = f"%{q_text}%"
         query = query.filter(
             db.or_(
-                WorkOrder.title.ilike(like),
+                WorkOrder.customer.ilike(like),
                 WorkOrder.description.ilike(like)
             )
         )
 
     all_orders = query.order_by(WorkOrder.due_date.asc()).all()
-    return render_template("workorders.html",
-                           workorders=all_orders,
-                           q_type=q_type,
-                           q_status=q_status,
-                           q_text=q_text)
+
+    # 🔹 Stats for tiles
+    total_orders = WorkOrder.query.count()
+    open_orders = WorkOrder.query.filter_by(status="Open").count()
+    in_progress_orders = WorkOrder.query.filter_by(status="In Progress").count()
+    closed_orders = WorkOrder.query.filter_by(status="Closed").count()
+    high_priority = WorkOrder.query.filter_by(priority="High").count()
+
+    return render_template(
+        "workorders.html",
+        workorders=all_orders,
+        q_type=q_type,
+        q_status=q_status,
+        q_text=q_text,
+        total_orders=total_orders,
+        open_orders=open_orders,
+        in_progress_orders=in_progress_orders,
+        closed_orders=closed_orders,
+        high_priority=high_priority
+    )
 
 @app.route("/workorders/add", methods=["GET", "POST"])
 def add_workorder():
