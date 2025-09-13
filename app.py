@@ -144,6 +144,34 @@ def delete_transaction(txn_id):
     db.session.commit()
     return redirect(url_for('transactions'))
 
+# Edit transaction
+@app.route("/edit/<int:transaction_id>", methods=["GET", "POST"])
+def edit_transaction(transaction_id):
+    txn = Transaction.query.get_or_404(transaction_id)
+
+    if request.method == "POST":
+        txn.date = request.form["date"]
+        txn.type = request.form["type"]
+        txn.category = request.form["category"]
+        txn.party = request.form.get("party")
+        txn.description = request.form.get("description")
+        txn.amount = float(request.form["amount"])
+        txn.status = request.form["status"]
+
+        # If user uploads a new receipt, save it
+        receipt = request.files.get("receipt")
+        if receipt:
+            path = os.path.join("static/receipts", receipt.filename)
+            receipt.save(path)
+            txn.receipt_path = path
+
+        db.session.commit()
+        flash("Transaction updated successfully!", "success")
+        return redirect(url_for("transactions"))
+
+    return render_template("edit_transaction.html", txn=txn)
+
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
