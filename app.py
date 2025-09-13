@@ -298,7 +298,7 @@ def delete_workorder(workorder_id):
 
 @app.context_processor
 def inject_version():
-    return dict(version="v0.2.1-dev")
+    return dict(version="v0.2.1-prod")
 
 # ------------------ Run ------------------
 if __name__ == '__main__':
