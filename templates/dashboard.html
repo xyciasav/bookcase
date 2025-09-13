@@ -143,6 +143,14 @@
   </div>
 </div>
 
+{% if upcoming_order %}
+<div class="alert alert-info mt-3">
+  <strong>Upcoming Work Order:</strong>
+  #{{ upcoming_order.id }} - {{ upcoming_order.customer }}
+  (Due: {{ upcoming_order.due_date.strftime('%Y-%m-%d') }})
+</div>
+{% endif %}
+
 <h5 class="mb-3">Recent</h5>
 <div class="table-responsive">
   <table class="table table-sm table-striped align-middle">

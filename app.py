@@ -91,19 +91,44 @@ def dashboard():
     paid_bookings = db.session.query(db.func.count(Booking.id))\
         .filter(Booking.paid_status == "Paid").scalar()
 
+    # --- Work Orders ---
+    total_orders = db.session.query(db.func.count(WorkOrder.id)).scalar()
+    open_orders = db.session.query(db.func.count(WorkOrder.id)).filter_by(status="Open").scalar()
+    in_progress_orders = db.session.query(db.func.count(WorkOrder.id)).filter_by(status="In Progress").scalar()
+    closed_orders = db.session.query(db.func.count(WorkOrder.id)).filter_by(status="Closed").scalar()
+    high_priority = db.session.query(db.func.count(WorkOrder.id)).filter_by(priority="High").scalar()
+
+    recent_orders = WorkOrder.query.order_by(WorkOrder.created_at.desc()).limit(5).all()
+
+    # upcoming due date
+    upcoming_order = WorkOrder.query.filter(WorkOrder.due_date != None)\
+                                    .order_by(WorkOrder.due_date.asc())\
+                                    .first()
+
     return render_template(
         'dashboard.html',
+        # Transactions
         income_paid=income_paid or 0.0,
         expense_paid=expense_paid or 0.0,
         profit=profit or 0.0,
         pending_income=pending_income or 0,
         pending_expense=pending_expense or 0,
         recent=recent,
+        # Bookings
         total_bookings=total_bookings or 0,
         total_expected_income=total_expected_income or 0.0,
         pending_bookings=pending_bookings or 0,
-        paid_bookings=paid_bookings or 0
+        paid_bookings=paid_bookings or 0,
+        # Work Orders
+        total_orders=total_orders or 0,
+        open_orders=open_orders or 0,
+        in_progress_orders=in_progress_orders or 0,
+        closed_orders=closed_orders or 0,
+        high_priority=high_priority or 0,
+        recent_orders=recent_orders,
+        upcoming_order=upcoming_order
     )
+
 
 # ------------------ Transactions ------------------
 
