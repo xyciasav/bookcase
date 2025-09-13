@@ -312,7 +312,7 @@ def delete_workorder(workorder_id):
 
 @app.context_processor
 def inject_version():
-    return dict(version="v0.2.1-prod")
+    return dict(version="v0.2.2-dev")
 
 
 # ------------------ Bookings ------------------
