@@ -5,6 +5,8 @@ from datetime import datetime
 import os
 
 # --- Config ---
+APP_VERSION = "v0.2.1-dev"  # update manually when you push changes
+
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///business.db'
@@ -293,6 +295,10 @@ def delete_workorder(workorder_id):
     db.session.commit()
     flash("Work order deleted!", "danger")
     return redirect(url_for("workorders"))
+
+@app.context_processor
+def inject_version():
+    return dict(version="v0.2.1-dev")
 
 # ------------------ Run ------------------
 if __name__ == '__main__':
