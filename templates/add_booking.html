@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Add Booking</h1>
+
+<form method="post">
+  <div class="mb-3">
+    <label class="form-label">Customer</label>
+    <input type="text" name="customer" class="form-control" required>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Type</label>
+    <select name="booking_type" class="form-select" required>
+      <option>Logo</option>
+      <option>Logo + Branding</option>
+      <option>Flyer</option>
+      <option>Birthday Invite</option>
+      <option>Wedding Invite</option>
+      <option>Engagement Announcement</option>
+      <option>Save the Date</option>
+      <option>Family Portraits</option>
+      <option>Headshots</option>
+      <option>Wedding Photography</option>
+      <option>Wedding Videography</option>
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Event Date</label>
+    <input type="date" name="event_date" class="form-control" required>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Secondary Date (optional)</label>
+    <input type="date" name="secondary_date" class="form-control">
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Expected Income</label>
+    <input type="number" step="0.01" name="expected_income" class="form-control" required>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Paid Status</label>
+    <select name="paid_status" class="form-select">
+      <option>Pending</option>
+      <option>Partial</option>
+      <option>Paid</option>
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Notes</label>
+    <textarea name="notes" class="form-control"></textarea>
+  </div>
+
+  <button type="submit" class="btn btn-success">Save</button>
+  <a href="{{ url_for('bookings') }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

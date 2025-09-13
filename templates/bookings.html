@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Bookings</h1>
+
+<a href="{{ url_for('add_booking') }}" class="btn btn-primary mb-3">+ Add Booking</a>
+
+<div class="table-responsive">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Customer</th>
+        <th>Type</th>
+        <th>Event Date</th>
+        <th>Secondary Date</th>
+        <th>Expected Income</th>
+        <th>Status</th>
+        <th>Notes</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in bookings %}
+      <tr>
+        <td>{{ b.id }}</td>
+        <td>{{ b.customer }}</td>
+        <td>{{ b.booking_type }}</td>
+        <td>{{ b.event_date.strftime('%Y-%m-%d') }}</td>
+        <td>{{ b.secondary_date.strftime('%Y-%m-%d') if b.secondary_date else '' }}</td>
+        <td>${{ '%.2f'|format(b.expected_income) }}</td>
+        <td>{{ b.paid_status }}</td>
+        <td>{{ b.notes or '' }}</td>
+        <td>
+          <a href="{{ url_for('edit_booking', booking_id=b.id) }}" class="btn btn-warning btn-sm">Edit</a>
+          <form action="{{ url_for('delete_booking', booking_id=b.id) }}" method="post" style="display:inline;">
+            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
