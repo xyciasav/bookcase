@@ -15,17 +15,15 @@
       </select>
     </div>
 
-    <!-- Booking type -->
+    <!-- Booking Type -->
     <div class="mb-3">
-      <label for="booking_type" class="form-label">Booking Type</label>
-      <select class="form-select" id="booking_type" name="booking_type" required>
-        <option value="">Select type...</option>
-        <option value="Wedding">Wedding</option>
-        <option value="Engagement">Engagement</option>
-        <option value="Portrait">Portrait</option>
-        <option value="Event">Event</option>
-        <option value="Other">Other</option>
-      </select>
+    <label for="booking_type" class="form-label">Booking Type</label>
+    <select class="form-select" id="booking_type" name="booking_type" required>
+        <option value="">Select a type...</option>
+        {% for jt in job_types %}
+        <option value="{{ jt.name }}">{{ jt.name }}</option>
+        {% endfor %}
+    </select>
     </div>
 
     <!-- Event date -->
