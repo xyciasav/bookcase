@@ -7,7 +7,7 @@ import csv
 from flask import Response
 
 # --- Config ---
-APP_VERSION = "v0.4.8-dev"  # update manually when you push changes
+APP_VERSION = "v0.4.9-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -77,12 +77,11 @@ class Customer(db.Model):
     address = db.Column(db.String(250), nullable=True)
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    invoices = db.relationship("Invoice", backref="customer_obj", lazy=True)
-
 
     # relationships
     bookings = db.relationship("Booking", backref="customer_obj", lazy=True)
     workorders = db.relationship("WorkOrder", backref="customer_obj", lazy=True)
+    invoices = db.relationship("Invoice", backref="customer_obj", lazy=True)  # 🔹 NEW
 
     def __repr__(self):
         return f"<Customer {self.name}>"
@@ -707,6 +706,12 @@ def create_invoice_from_booking(booking_id):
 
     flash("Invoice created!", "success")
     return redirect(url_for("view_invoice", invoice_id=invoice.id))
+
+@app.route("/invoices")
+def invoices_list():
+    invoices = Invoice.query.order_by(Invoice.created_at.desc()).all()
+    return render_template("invoices.html", invoices=invoices)
+
 
 # ------------------ Settings (Job Types) ------------------
 
