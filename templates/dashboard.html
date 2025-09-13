@@ -2,6 +2,14 @@
 {% block content %}
 <h1 class="mb-4">Dashboard</h1>
 
+{% if upcoming_order %}
+<div class="alert alert-info mt-3">
+  <strong>Upcoming Work Order:</strong>
+  #{{ upcoming_order.id }} - {{ upcoming_order.customer }}
+  (Due: {{ upcoming_order.due_date.strftime('%Y-%m-%d') }})
+</div>
+{% endif %}
+
 <div class="row g-3 mb-4">
   <div class="col-md-3">
     <div class="card shadow-sm">
@@ -27,6 +35,58 @@
       </div>
     </div>
   </div>
+    <div class="col-md-3">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="text-muted">Pending</h6>
+        <div class="d-flex justify-content-between">
+          <span>Income</span><strong>{{ pending_income }}</strong>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span>Expenses</span><strong>{{ pending_expense }}</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h5 class="mb-3">Recent</h5>
+<div class="table-responsive">
+  <table class="table table-sm table-striped align-middle">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Category</th>
+        <th>Party</th>
+        <th>Description</th>
+        <th class="text-end">Amount</th>
+        <th>Status</th>
+        <th>Receipt</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in recent %}
+      <tr>
+        <td>{{ t.date.strftime('%Y-%m-%d') }}</td>
+        <td>{{ t.type }}</td>
+        <td>{{ t.category }}</td>
+        <td>{{ t.party or '' }}</td>
+        <td>{{ t.description or '' }}</td>
+        <td class="text-end">${{ '%.2f'|format(t.amount) }}</td>
+        <td>{{ t.status }}</td>
+        <td>
+          {% if t.receipt_path %}
+            <a href="{{ '/' + t.receipt_path }}" target="_blank">view</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
   <!-- Bookings Section -->
 <h2 class="mt-4">Bookings Overview</h2>
 <div class="row">
@@ -63,20 +123,7 @@
     </div>
   </div>
 </div>
-  <div class="col-md-3">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h6 class="text-muted">Pending</h6>
-        <div class="d-flex justify-content-between">
-          <span>Income</span><strong>{{ pending_income }}</strong>
-        </div>
-        <div class="d-flex justify-content-between">
-          <span>Expenses</span><strong>{{ pending_expense }}</strong>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+
 <div class="row mt-4">
   <div class="col-md-12">
     <h2>Work Orders</h2>
@@ -142,48 +189,3 @@
     </ul>
   </div>
 </div>
-
-{% if upcoming_order %}
-<div class="alert alert-info mt-3">
-  <strong>Upcoming Work Order:</strong>
-  #{{ upcoming_order.id }} - {{ upcoming_order.customer }}
-  (Due: {{ upcoming_order.due_date.strftime('%Y-%m-%d') }})
-</div>
-{% endif %}
-
-<h5 class="mb-3">Recent</h5>
-<div class="table-responsive">
-  <table class="table table-sm table-striped align-middle">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Type</th>
-        <th>Category</th>
-        <th>Party</th>
-        <th>Description</th>
-        <th class="text-end">Amount</th>
-        <th>Status</th>
-        <th>Receipt</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for t in recent %}
-      <tr>
-        <td>{{ t.date.strftime('%Y-%m-%d') }}</td>
-        <td>{{ t.type }}</td>
-        <td>{{ t.category }}</td>
-        <td>{{ t.party or '' }}</td>
-        <td>{{ t.description or '' }}</td>
-        <td class="text-end">${{ '%.2f'|format(t.amount) }}</td>
-        <td>{{ t.status }}</td>
-        <td>
-          {% if t.receipt_path %}
-            <a href="{{ '/' + t.receipt_path }}" target="_blank">view</a>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% endblock %}
