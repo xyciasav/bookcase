@@ -2,6 +2,54 @@
 {% block content %}
 <h1 class="mb-4">Work Orders</h1>
 
+<div class="mb-3">
+  <a href="{{ url_for('add_workorder') }}" class="btn btn-success">+ Add Work Order</a>
+</div>
+
+<!-- Stats tiles -->
+<div class="row text-center mb-4"> 
+  <div class="col-md-2">
+    <div class="card">
+      <div class="card-body">
+        <h5>Total</h5>
+        <p class="fs-4">{{ total_orders }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card">
+      <div class="card-body">
+        <h5>New</h5>
+        <p class="fs-4">{{ open_orders }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card">
+      <div class="card-body">
+        <h5>In Progress</h5>
+        <p class="fs-4">{{ in_progress_orders }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card">
+      <div class="card-body">
+        <h5>Closed</h5>
+        <p class="fs-4">{{ closed_orders }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card">
+      <div class="card-body">
+        <h5>High Priority</h5>
+        <p class="fs-4 text-danger">{{ high_priority }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <form class="row g-2 mb-3" method="get">
   <div class="col-sm-3">
     <select class="form-select" name="type">
@@ -18,7 +66,7 @@
   <div class="col-sm-3">
     <select class="form-select" name="status">
       <option value="All" {{ 'selected' if q_status=='All' else '' }}>All Status</option>
-      <option value="Open" {{ 'selected' if q_status=='Open' else '' }}>Open</option>
+      <option value="New" {{ 'selected' if q_status=='New' else '' }}>New</option>
       <option value="In Progress" {{ 'selected' if q_status=='In Progress' else '' }}>In Progress</option>
       <option value="Closed" {{ 'selected' if q_status=='Closed' else '' }}>Closed</option>
     </select>
@@ -30,10 +78,6 @@
     <button class="btn btn-primary" type="submit">Filter</button>
   </div>
 </form>
-
-<div class="mb-3">
-  <a href="{{ url_for('add_workorder') }}" class="btn btn-success">+ Add Work Order</a>
-</div>
 
 <div class="table-responsive">
   <table class="table table-striped align-middle">
@@ -65,9 +109,33 @@
         </td>
         <td>
           <a href="{{ url_for('edit_workorder', workorder_id=order.id) }}" class="btn btn-warning btn-sm">Edit</a>
-          <form action="{{ url_for('delete_workorder', workorder_id=order.id) }}" method="post" style="display:inline;">
-            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-          </form>
+
+          <!-- Delete button triggers modal -->
+          <button type="button" class="btn btn-danger btn-sm" 
+                  data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ order.id }}">
+            Delete
+          </button>
+
+          <!-- Modal -->
+          <div class="modal fade" id="confirmDeleteModal{{ order.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ order.id }}" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                  <h5 class="modal-title" id="confirmDeleteLabel{{ order.id }}">Confirm Delete</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  Are you sure you want to delete Work Order <strong>#{{ order.id }}</strong> ({{ order.customer }})?
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <form action="{{ url_for('delete_workorder', workorder_id=order.id) }}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
         </td>
       </tr>
       {% endfor %}

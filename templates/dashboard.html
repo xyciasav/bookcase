@@ -2,6 +2,14 @@
 {% block content %}
 <h1 class="mb-4">Dashboard</h1>
 
+{% if upcoming_order %}
+<div class="alert alert-info mt-3">
+  <strong>Upcoming Work Order:</strong>
+  #{{ upcoming_order.id }} - {{ upcoming_order.customer }}
+  (Due: {{ upcoming_order.due_date.strftime('%Y-%m-%d') }})
+</div>
+{% endif %}
+
 <div class="row g-3 mb-4">
   <div class="col-md-3">
     <div class="card shadow-sm">
@@ -27,7 +35,7 @@
       </div>
     </div>
   </div>
-  <div class="col-md-3">
+    <div class="col-md-3">
     <div class="card shadow-sm">
       <div class="card-body">
         <h6 class="text-muted">Pending</h6>
@@ -76,5 +84,108 @@
       {% endfor %}
     </tbody>
   </table>
+</div>
+
+  <!-- Bookings Section -->
+<h2 class="mt-4">Bookings Overview</h2>
+<div class="row">
+  <div class="col-md-3">
+    <div class="card text-bg-info mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Total Bookings</h5>
+        <p class="card-text">{{ total_bookings }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-bg-warning mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Pending</h5>
+        <p class="card-text">{{ pending_bookings }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-bg-success mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Paid</h5>
+        <p class="card-text">{{ paid_bookings }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-bg-secondary mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Expected Income</h5>
+        <p class="card-text">${{ '%.2f'|format(total_expected_income) }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-md-12">
+    <h2>Work Orders</h2>
+  </div>
+</div>
+
+<div class="row text-center">
+  <div class="col-md-2">
+    <div class="card">
+      <div class="card-body">
+        <h5>Total</h5>
+        <p class="fs-4">{{ total_orders }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card">
+      <div class="card-body">
+        <h5>New</h5>
+        <p class="fs-4">{{ open_orders }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card">
+      <div class="card-body">
+        <h5>In Progress</h5>
+        <p class="fs-4">{{ in_progress_orders }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card">
+      <div class="card-body">
+        <h5>Closed</h5>
+        <p class="fs-4">{{ closed_orders }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card">
+      <div class="card-body">
+        <h5>High Priority</h5>
+        <p class="fs-4 text-danger">{{ high_priority }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Work Orders -->
+<div class="row mt-4">
+  <div class="col-md-12">
+    <h4>Recent Work Orders</h4>
+    <ul class="list-group">
+      {% for order in recent_orders %}
+        <li class="list-group-item">
+          <strong>#{{ order.id }}</strong> - {{ order.customer }} 
+          ({{ order.order_type }}, {{ order.priority }}, {{ order.status }})
+        </li>
+      {% else %}
+        <li class="list-group-item text-muted">No recent work orders</li>
+      {% endfor %}
+    </ul>
+  </div>
 </div>
 {% endblock %}

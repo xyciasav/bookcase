@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 
 # --- Config ---
-APP_VERSION = "v0.2.1-dev"  # update manually when you push changes
+APP_VERSION = "v0.2.5-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -40,13 +40,27 @@ class WorkOrder(db.Model):
     description = db.Column(db.Text, nullable=True)
     order_type = db.Column(db.String(50), nullable=False)  # Logo, Flyer, etc.
     due_date = db.Column(db.Date, nullable=True)
-    status = db.Column(db.String(20), default="Open")  # Open, In Progress, Closed
+    status = db.Column(db.String(20), default="New")  # New, In Progress, Closed
     file_path = db.Column(db.String(300), nullable=True)  # uploaded file
     priority = db.Column(db.String(20), default="Medium")  # Low, Medium, High
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
         return f"<WorkOrder {self.id}: {self.title} ({self.priority})>"
+
+class Booking(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    customer = db.Column(db.String(120), nullable=False)
+    booking_type = db.Column(db.String(50), nullable=False)  
+    event_date = db.Column(db.Date, nullable=False)
+    secondary_date = db.Column(db.Date, nullable=True)  # optional
+    expected_income = db.Column(db.Float, nullable=False, default=0.0)
+    paid_status = db.Column(db.String(10), default="Pending")  # Paid | Pending | Partial
+    notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<Booking {self.id}: {self.customer} - {self.booking_type}>"
 
 # --- Routes ---
 @app.route('/')
@@ -55,29 +69,66 @@ def index():
 
 @app.route('/dashboard')
 def dashboard():
-    # Totals (paid only)
+    # --- Transactions ---
     income_paid = db.session.query(db.func.coalesce(db.func.sum(Transaction.amount), 0.0))\
         .filter_by(type='Income', status='Paid').scalar()
     expense_paid = db.session.query(db.func.coalesce(db.func.sum(Transaction.amount), 0.0))\
         .filter_by(type='Expense', status='Paid').scalar()
     profit = (income_paid or 0.0) - (expense_paid or 0.0)
 
-    # Pending counts
     pending_income = db.session.query(db.func.count(Transaction.id))\
         .filter_by(type='Income', status='Pending').scalar()
     pending_expense = db.session.query(db.func.count(Transaction.id))\
         .filter_by(type='Expense', status='Pending').scalar()
 
-    # Recent transactions
     recent = Transaction.query.order_by(Transaction.date.desc(), Transaction.id.desc()).limit(10).all()
 
-    return render_template('dashboard.html',
-                           income_paid=income_paid or 0.0,
-                           expense_paid=expense_paid or 0.0,
-                           profit=profit or 0.0,
-                           pending_income=pending_income or 0,
-                           pending_expense=pending_expense or 0,
-                           recent=recent)
+    # --- Bookings ---
+    total_bookings = db.session.query(db.func.count(Booking.id)).scalar()
+    total_expected_income = db.session.query(db.func.coalesce(db.func.sum(Booking.expected_income), 0.0)).scalar()
+    pending_bookings = db.session.query(db.func.count(Booking.id))\
+        .filter(Booking.paid_status != "Paid").scalar()
+    paid_bookings = db.session.query(db.func.count(Booking.id))\
+        .filter(Booking.paid_status == "Paid").scalar()
+
+    # --- Work Orders ---
+    total_orders = db.session.query(db.func.count(WorkOrder.id)).scalar()
+    open_orders = db.session.query(db.func.count(WorkOrder.id)).filter_by(status="New").scalar()
+    in_progress_orders = db.session.query(db.func.count(WorkOrder.id)).filter_by(status="In Progress").scalar()
+    closed_orders = db.session.query(db.func.count(WorkOrder.id)).filter_by(status="Closed").scalar()
+    high_priority = db.session.query(db.func.count(WorkOrder.id)).filter_by(priority="High").scalar()
+
+    recent_orders = WorkOrder.query.order_by(WorkOrder.created_at.desc()).limit(5).all()
+
+    # upcoming due date
+    upcoming_order = WorkOrder.query.filter(WorkOrder.due_date != None)\
+                                    .order_by(WorkOrder.due_date.asc())\
+                                    .first()
+
+    return render_template(
+        'dashboard.html',
+        # Transactions
+        income_paid=income_paid or 0.0,
+        expense_paid=expense_paid or 0.0,
+        profit=profit or 0.0,
+        pending_income=pending_income or 0,
+        pending_expense=pending_expense or 0,
+        recent=recent,
+        # Bookings
+        total_bookings=total_bookings or 0,
+        total_expected_income=total_expected_income or 0.0,
+        pending_bookings=pending_bookings or 0,
+        paid_bookings=paid_bookings or 0,
+        # Work Orders
+        total_orders=total_orders or 0,
+        open_orders=open_orders or 0,
+        in_progress_orders=in_progress_orders or 0,
+        closed_orders=closed_orders or 0,
+        high_priority=high_priority or 0,
+        recent_orders=recent_orders,
+        upcoming_order=upcoming_order
+    )
+
 
 # ------------------ Transactions ------------------
 
@@ -194,23 +245,38 @@ def workorders():
 
     if q_type != "All":
         query = query.filter(WorkOrder.order_type == q_type)
-    if q_status in ("Open", "In Progress", "Closed"):
+    if q_status in ("New", "In Progress", "Closed"):
         query = query.filter(WorkOrder.status == q_status)
     if q_text:
         like = f"%{q_text}%"
         query = query.filter(
             db.or_(
-                WorkOrder.title.ilike(like),
+                WorkOrder.customer.ilike(like),
                 WorkOrder.description.ilike(like)
             )
         )
 
     all_orders = query.order_by(WorkOrder.due_date.asc()).all()
-    return render_template("workorders.html",
-                           workorders=all_orders,
-                           q_type=q_type,
-                           q_status=q_status,
-                           q_text=q_text)
+
+    # 🔹 Stats for tiles
+    total_orders = WorkOrder.query.count()
+    open_orders = WorkOrder.query.filter_by(status="New").count()
+    in_progress_orders = WorkOrder.query.filter_by(status="In Progress").count()
+    closed_orders = WorkOrder.query.filter_by(status="Closed").count()
+    high_priority = WorkOrder.query.filter_by(priority="High").count()
+
+    return render_template(
+        "workorders.html",
+        workorders=all_orders,
+        q_type=q_type,
+        q_status=q_status,
+        q_text=q_text,
+        total_orders=total_orders,
+        open_orders=open_orders,
+        in_progress_orders=in_progress_orders,
+        closed_orders=closed_orders,
+        high_priority=high_priority
+    )
 
 @app.route("/workorders/add", methods=["GET", "POST"])
 def add_workorder():
@@ -220,7 +286,7 @@ def add_workorder():
         order_type = request.form["order_type"]
         priority = request.form.get("priority", "Medium")
         due_date_str = request.form.get("due_date")
-        status = request.form.get("status", "Open")
+        status = request.form.get("status", "New")
 
         due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
 
@@ -296,11 +362,80 @@ def delete_workorder(workorder_id):
     flash("Work order deleted!", "danger")
     return redirect(url_for("workorders"))
 
-@app.context_processor
-def inject_version():
-    return dict(version="v0.2.1-prod")
+# ------------------ Bookings ------------------
+
+@app.route("/bookings")
+def bookings():
+    q_status = request.args.get("status", "All")
+    query = Booking.query
+    if q_status in ("Paid", "Pending", "Partial"):
+        query = query.filter(Booking.paid_status == q_status)
+
+    all_bookings = query.order_by(Booking.event_date.asc()).all()
+    return render_template("bookings.html", bookings=all_bookings, q_status=q_status)
+
+@app.route("/bookings/add", methods=["GET", "POST"])
+def add_booking():
+    if request.method == "POST":
+        customer = request.form["customer"]
+        booking_type = request.form["booking_type"]
+        event_date = datetime.strptime(request.form["event_date"], "%Y-%m-%d").date()
+        secondary_date_str = request.form.get("secondary_date")
+        secondary_date = datetime.strptime(secondary_date_str, "%Y-%m-%d").date() if secondary_date_str else None
+        expected_income = float(request.form.get("expected_income", 0))
+        paid_status = request.form.get("paid_status", "Pending")
+        notes = request.form.get("notes")
+
+        new_booking = Booking(
+            customer=customer,
+            booking_type=booking_type,
+            event_date=event_date,
+            secondary_date=secondary_date,
+            expected_income=expected_income,
+            paid_status=paid_status,
+            notes=notes
+        )
+        db.session.add(new_booking)
+        db.session.commit()
+        flash("Booking added successfully!", "success")
+        return redirect(url_for("bookings"))
+
+    return render_template("add_booking.html")
+
+@app.route("/bookings/edit/<int:booking_id>", methods=["GET", "POST"])
+def edit_booking(booking_id):
+    booking = Booking.query.get_or_404(booking_id)
+
+    if request.method == "POST":
+        booking.customer = request.form["customer"]
+        booking.booking_type = request.form["booking_type"]
+        booking.event_date = datetime.strptime(request.form["event_date"], "%Y-%m-%d").date()
+        secondary_date_str = request.form.get("secondary_date")
+        booking.secondary_date = datetime.strptime(secondary_date_str, "%Y-%m-%d").date() if secondary_date_str else None
+        booking.expected_income = float(request.form.get("expected_income", 0))
+        booking.paid_status = request.form.get("paid_status")
+        booking.notes = request.form.get("notes")
+
+        db.session.commit()
+        flash("Booking updated successfully!", "success")
+        return redirect(url_for("bookings"))
+
+    return render_template("edit_booking.html", booking=booking)
+
+@app.route("/bookings/delete/<int:booking_id>", methods=["POST"])
+def delete_booking(booking_id):
+    booking = Booking.query.get_or_404(booking_id)
+    db.session.delete(booking)
+    db.session.commit()
+    flash("Booking deleted!", "danger")
+    return redirect(url_for("bookings"))
+
 
 # ------------------ Run ------------------
+@app.context_processor
+def inject_version():
+    return dict(version=APP_VERSION)
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
