@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="mb-4">Invoices</h1>
+
+<div class="table-responsive">
+  <table class="table table-striped align-middle">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Customer</th>
+        <th>Total</th>
+        <th>Status</th>
+        <th>Date</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for inv in invoices %}
+      <tr>
+        <td>{{ inv.id }}</td>
+        <td>{{ inv.customer_id }}</td>
+        <td>${{ '%.2f'|format(inv.total) }}</td>
+        <td>{{ inv.status }}</td>
+        <td>{{ inv.created_at.strftime('%Y-%m-%d') }}</td>
+        <td>
+          <a href="{{ url_for('view_invoice', invoice_id=inv.id) }}" class="btn btn-info btn-sm">View</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -30,34 +30,39 @@
       <tr>
         <td>{{ jt.name }}</td>
         <td>${{ '%.2f'|format(jt.base_price or 0.0) }}</td>
-        <td>
-          <!-- Delete button with modal -->
-          <button type="button" class="btn btn-danger btn-sm"
-                  data-bs-toggle="modal" data-bs-target="#deleteJobType{{ jt.id }}">
-            Delete
-          </button>
 
-          <!-- Modal -->
-          <div class="modal fade" id="deleteJobType{{ jt.id }}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header bg-danger text-white">
-                  <h5 class="modal-title">Confirm Delete</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                  Are you sure you want to delete job type <strong>{{ jt.name }}</strong>?
-                </div>
-                <div class="modal-footer">
-                  <form method="post" action="{{ url_for('delete_jobtype', type_id=jt.id) }}">
-                    <button type="submit" class="btn btn-danger">Yes, Delete</button>
-                  </form>
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                </div>
-              </div>
+        
+            <td>
+      <!-- Edit button -->
+      <a href="{{ url_for('edit_jobtype', type_id=jt.id) }}" class="btn btn-warning btn-sm">Edit</a>
+
+      <!-- Delete button with modal -->
+      <button type="button" class="btn btn-danger btn-sm"
+              data-bs-toggle="modal" data-bs-target="#deleteJobType{{ jt.id }}">
+        Delete
+      </button>
+
+      <!-- Modal -->
+      <div class="modal fade" id="deleteJobType{{ jt.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+              <h5 class="modal-title">Confirm Delete</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              Are you sure you want to delete job type <strong>{{ jt.name }}</strong>?
+            </div>
+            <div class="modal-footer">
+              <form method="post" action="{{ url_for('delete_jobtype', type_id=jt.id) }}">
+                <button type="submit" class="btn btn-danger">Yes, Delete</button>
+              </form>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
             </div>
           </div>
-        </td>
+        </div>
+      </div>
+    </td>
       </tr>
       {% endfor %}
     </tbody>

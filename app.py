@@ -7,7 +7,7 @@ import csv
 from flask import Response
 
 # --- Config ---
-APP_VERSION = "v0.4.5-dev"  # update manually when you push changes
+APP_VERSION = "v0.4.7-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -634,6 +634,11 @@ def seed_job_types():
 
 # -------------------- Invoices -----------------------------
 
+@app.route("/invoices")
+def invoices():
+    all_invoices = Invoice.query.order_by(Invoice.created_at.desc()).all()
+    return render_template("invoices.html", invoices=all_invoices)
+
 @app.route("/invoices/create/<int:customer_id>", methods=["POST"])
 def create_invoice(customer_id):
     customer = Customer.query.get_or_404(customer_id)
@@ -661,6 +666,13 @@ def create_invoice(customer_id):
 
     flash("Invoice created!", "success")
     return redirect(url_for("view_invoice", invoice_id=invoice.id))
+
+@app.route("/invoices/<int:invoice_id>")
+def view_invoice(invoice_id):
+    invoice = Invoice.query.get_or_404(invoice_id)
+    customer = Customer.query.get(invoice.customer_id)
+    return render_template("view_invoice.html", invoice=invoice, customer=customer)
+
 
 # ------------------ Settings (Job Types) ------------------
 
@@ -691,6 +703,16 @@ def delete_jobtype(type_id):
     flash("Job type deleted!", "danger")
     return redirect(url_for("jobtypes"))
 
+@app.route("/settings/jobtypes/edit/<int:type_id>", methods=["GET", "POST"])
+def edit_jobtype(type_id):
+    jt = JobType.query.get_or_404(type_id)
+    if request.method == "POST":
+        jt.name = request.form.get("name")
+        jt.base_price = float(request.form.get("price", 0))
+        db.session.commit()
+        flash("Job type updated!", "success")
+        return redirect(url_for("jobtypes"))
+    return render_template("edit_jobtype.html", jobtype=jt)
 
 # ------------------ Run ------------------
 @app.context_processor
