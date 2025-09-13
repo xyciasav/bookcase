@@ -279,7 +279,7 @@ def edit_workorder(workorder_id):
         flash("Work order updated successfully!", "success")
         return redirect(url_for("workorders"))
 
-    return render_template("add_workorder.html", order=order)
+    return render_template("edit_workorder.html", order=order)
 
 @app.route("/workorders/delete/<int:workorder_id>", methods=["POST"])
 def delete_workorder(workorder_id):
