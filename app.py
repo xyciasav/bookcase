@@ -7,7 +7,7 @@ import csv
 from flask import Response
 
 # --- Config ---
-APP_VERSION = "v0.2.8-dev"  # update manually when you push changes
+APP_VERSION = "v0.3.1-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -38,13 +38,13 @@ class Transaction(db.Model):
 
 class WorkOrder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    customer = db.Column(db.String(120), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey("customer.id"), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    order_type = db.Column(db.String(50), nullable=False)  # Logo, Flyer, etc.
+    order_type = db.Column(db.String(50), nullable=False)
     due_date = db.Column(db.Date, nullable=True)
-    status = db.Column(db.String(20), default="New")  # New, In Progress, Closed
-    file_path = db.Column(db.String(300), nullable=True)  # uploaded file
-    priority = db.Column(db.String(20), default="Medium")  # Low, Medium, High
+    status = db.Column(db.String(20), default="New")
+    file_path = db.Column(db.String(300), nullable=True)
+    priority = db.Column(db.String(20), default="Medium")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
@@ -52,10 +52,10 @@ class WorkOrder(db.Model):
 
 class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    customer = db.Column(db.String(120), nullable=False)
-    booking_type = db.Column(db.String(50), nullable=False)  
+    customer_id = db.Column(db.Integer, db.ForeignKey("customer.id"), nullable=False)
+    booking_type = db.Column(db.String(50), nullable=False)
     event_date = db.Column(db.Date, nullable=False)
-    secondary_date = db.Column(db.Date, nullable=True)  # optional
+    secondary_date = db.Column(db.Date, nullable=True)
     expected_income = db.Column(db.Float, nullable=False, default=0.0)
     paid_status = db.Column(db.String(10), default="Pending")  # Paid | Pending | Partial
     notes = db.Column(db.Text, nullable=True)
@@ -63,6 +63,22 @@ class Booking(db.Model):
 
     def __repr__(self):
         return f"<Booking {self.id}: {self.customer} - {self.booking_type}>"
+    
+class Customer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), nullable=True)
+    phone = db.Column(db.String(50), nullable=True)
+    address = db.Column(db.String(250), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # relationships
+    bookings = db.relationship("Booking", backref="customer_obj", lazy=True)
+    workorders = db.relationship("WorkOrder", backref="customer_obj", lazy=True)
+
+    def __repr__(self):
+        return f"<Customer {self.name}>"
 
 # --- Routes ---
 @app.route('/')
@@ -548,6 +564,62 @@ def delete_booking(booking_id):
     db.session.commit()
     flash("Booking deleted!", "danger")
     return redirect(url_for("bookings"))
+
+
+# ------------------ Customers ------------------
+
+@app.route("/customers")
+def customers():
+    all_customers = Customer.query.order_by(Customer.name.asc()).all()
+    return render_template("customers.html", customers=all_customers)
+
+@app.route("/customers/add", methods=["GET", "POST"])
+def add_customer():
+    if request.method == "POST":
+        name = request.form["name"]
+        email = request.form.get("email")
+        phone = request.form.get("phone")
+        address = request.form.get("address")
+        notes = request.form.get("notes")
+
+        new_customer = Customer(
+            name=name, email=email, phone=phone, address=address, notes=notes
+        )
+        db.session.add(new_customer)
+        db.session.commit()
+        flash("Customer added successfully!", "success")
+        return redirect(url_for("customers"))
+
+    return render_template("add_customer.html")
+
+@app.route("/customers/edit/<int:customer_id>", methods=["GET", "POST"])
+def edit_customer(customer_id):
+    customer = Customer.query.get_or_404(customer_id)
+    if request.method == "POST":
+        customer.name = request.form["name"]
+        customer.email = request.form.get("email")
+        customer.phone = request.form.get("phone")
+        customer.address = request.form.get("address")
+        customer.notes = request.form.get("notes")
+
+        db.session.commit()
+        flash("Customer updated successfully!", "success")
+        return redirect(url_for("customers"))
+
+    return render_template("edit_customer.html", customer=customer)
+
+@app.route("/customers/delete/<int:customer_id>", methods=["POST"])
+def delete_customer(customer_id):
+    customer = Customer.query.get_or_404(customer_id)
+    db.session.delete(customer)
+    db.session.commit()
+    flash("Customer deleted!", "danger")
+    return redirect(url_for("customers"))
+
+@app.route("/customers/<int:customer_id>")
+def view_customer(customer_id):
+    customer = Customer.query.get_or_404(customer_id)
+    return render_template("view_customer.html", customer=customer)
 
 
 # ------------------ Run ------------------
