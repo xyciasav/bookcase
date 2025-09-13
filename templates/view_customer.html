@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h1>{{ customer.name }}</h1>
+
+  <ul class="list-group mb-3">
+    <li class="list-group-item"><strong>Email:</strong> {{ customer.email or "—" }}</li>
+    <li class="list-group-item"><strong>Phone:</strong> {{ customer.phone or "—" }}</li>
+    <li class="list-group-item"><strong>Address:</strong> {{ customer.address or "—" }}</li>
+    <li class="list-group-item"><strong>Notes:</strong> {{ customer.notes or "—" }}</li>
+  </ul>
+
+  <h4>Bookings</h4>
+  {% if customer.bookings %}
+    <ul>
+      {% for b in customer.bookings %}
+        <li>{{ b.booking_type }} — {{ b.event_date.strftime('%Y-%m-%d') }} ({{ b.paid_status }})</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No bookings found.</p>
+  {% endif %}
+
+  <h4>Work Orders</h4>
+  {% if customer.workorders %}
+    <ul>
+      {% for w in customer.workorders %}
+        <li>{{ w.order_type }} — {{ w.status }} (Due: {{ w.due_date.strftime('%Y-%m-%d') if w.due_date else "N/A" }})</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No work orders found.</p>
+  {% endif %}
+
+  <a href="{{ url_for('edit_customer', customer_id=customer.id) }}" class="btn btn-warning">Edit</a>
+  <a href="{{ url_for('customers') }}" class="btn btn-secondary">Back</a>
+</div>
+{% endblock %}
