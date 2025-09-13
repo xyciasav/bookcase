@@ -41,6 +41,12 @@
     </select>
   </div>
 
+ <div class="mb-3">
+  <label for="partial_amount" class="form-label">Partial Payment Amount</label>
+  <input type="number" step="0.01" min="0" name="partial_amount" id="partial_amount" class="form-control">
+  <small class="form-text text-muted">Only used if status = Partial</small>
+</div>
+
   <div class="mb-3">
     <label class="form-label">Notes</label>
     <textarea name="notes" class="form-control">{{ booking.notes }}</textarea>

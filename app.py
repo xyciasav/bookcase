@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 
 # --- Config ---
-APP_VERSION = "v0.2.5-prod"  # update manually when you push changes
+APP_VERSION = "v0.2.7-prod"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -386,6 +386,7 @@ def add_booking():
         paid_status = request.form.get("paid_status", "Pending")
         notes = request.form.get("notes")
 
+        # Create booking
         new_booking = Booking(
             customer=customer,
             booking_type=booking_type,
@@ -397,6 +398,36 @@ def add_booking():
         )
         db.session.add(new_booking)
         db.session.commit()
+
+        # Create Transaction ONLY if money is received
+        if paid_status == "Paid":
+            txn = Transaction(
+                type="Income",
+                category="Booking",
+                party=customer,
+                description=f"{booking_type} Booking",
+                amount=expected_income,
+                status="Paid",
+                date=datetime.utcnow().date()
+            )
+            db.session.add(txn)
+            db.session.commit()
+
+        elif paid_status == "Partial":
+            partial_amount = float(request.form.get("partial_amount", 0))
+            if partial_amount > 0:
+                txn = Transaction(
+                    type="Income",
+                    category="Booking",
+                    party=customer,
+                    description=f"{booking_type} Booking (Partial Payment)",
+                    amount=partial_amount,
+                    status="Paid",
+                    date=datetime.utcnow().date(),
+                )
+                db.session.add(txn)
+                db.session.commit()
+
         flash("Booking added successfully!", "success")
         return redirect(url_for("bookings"))
 
@@ -407,14 +438,50 @@ def edit_booking(booking_id):
     booking = Booking.query.get_or_404(booking_id)
 
     if request.method == "POST":
-        booking.customer = request.form["customer"]
-        booking.booking_type = request.form["booking_type"]
-        booking.event_date = datetime.strptime(request.form["event_date"], "%Y-%m-%d").date()
+        customer = request.form["customer"]
+        booking_type = request.form["booking_type"]
+        event_date = datetime.strptime(request.form["event_date"], "%Y-%m-%d").date()
         secondary_date_str = request.form.get("secondary_date")
-        booking.secondary_date = datetime.strptime(secondary_date_str, "%Y-%m-%d").date() if secondary_date_str else None
-        booking.expected_income = float(request.form.get("expected_income", 0))
-        booking.paid_status = request.form.get("paid_status")
-        booking.notes = request.form.get("notes")
+        secondary_date = datetime.strptime(secondary_date_str, "%Y-%m-%d").date() if secondary_date_str else None
+        expected_income = float(request.form.get("expected_income", 0))
+        paid_status = request.form.get("paid_status", "Pending")
+        notes = request.form.get("notes")
+
+        # Update booking
+        booking.customer = customer
+        booking.booking_type = booking_type
+        booking.event_date = event_date
+        booking.secondary_date = secondary_date
+        booking.expected_income = expected_income
+        booking.paid_status = paid_status
+        booking.notes = notes
+
+        # --- Transaction logging ---
+        if paid_status == "Paid":
+            txn = Transaction(
+                type="Income",
+                category="Booking",
+                party=customer,
+                description=f"{booking_type} Booking (Paid in Full)",
+                amount=expected_income,
+                status="Paid",
+                date=datetime.utcnow().date(),
+            )
+            db.session.add(txn)
+
+        elif paid_status == "Partial":
+            partial_amount = float(request.form.get("partial_amount", 0))
+            if partial_amount > 0:
+                txn = Transaction(
+                    type="Income",
+                    category="Booking",
+                    party=customer,
+                    description=f"{booking_type} Booking (Partial Payment)",
+                    amount=partial_amount,
+                    status="Paid",
+                    date=datetime.utcnow().date(),
+                )
+                db.session.add(txn)
 
         db.session.commit()
         flash("Booking updated successfully!", "success")
