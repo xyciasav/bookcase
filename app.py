@@ -397,17 +397,12 @@ def add_workorder():
         due_date_str = request.form.get("due_date")
         status = request.form.get("status", "New")
 
-        # 🔹 lookup price from JobType
-        jt = JobType.query.filter_by(name=order_type).first()
-        price = jt.base_price if jt else 0.0
-
         due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
 
         new_order = WorkOrder(
             customer_id=customer_id,
             description=description,
             order_type=order_type,
-            price=price,        # 🔹 store it
             priority=priority,
             due_date=due_date,
             status=status
@@ -416,6 +411,23 @@ def add_workorder():
         db.session.commit()
         flash("Work order added successfully!", "success")
         return redirect(url_for("workorders"))
+
+    # --- If GET request (show form) ---
+    booking_id = request.args.get("booking_id")
+    preselected_customer = None
+    if booking_id:
+        booking = Booking.query.get(int(booking_id))
+        if booking:
+            preselected_customer = booking.customer_id
+
+    customers = Customer.query.order_by(Customer.name.asc()).all()
+    job_types = JobType.query.order_by(JobType.name.asc()).all()
+    return render_template(
+        "add_workorder.html",
+        customers=customers,
+        job_types=job_types,
+        preselected_customer=preselected_customer
+    )
 
 @app.route("/workorders/edit/<int:workorder_id>", methods=["GET", "POST"])
 def edit_workorder(workorder_id):
