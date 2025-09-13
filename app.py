@@ -46,7 +46,21 @@ class WorkOrder(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
-        return f"<WorkOrder {self.id}: {self.customer} ({self.priority})>"
+        return f"<WorkOrder {self.id}: {self.title} ({self.priority})>"
+
+class Booking(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    customer = db.Column(db.String(120), nullable=False)
+    booking_type = db.Column(db.String(50), nullable=False)  
+    event_date = db.Column(db.Date, nullable=False)
+    secondary_date = db.Column(db.Date, nullable=True)  # optional
+    expected_income = db.Column(db.Float, nullable=False, default=0.0)
+    paid_status = db.Column(db.String(10), default="Pending")  # Paid | Pending | Partial
+    notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<Booking {self.id}: {self.customer} - {self.booking_type}>"
 
 # --- Routes ---
 @app.route('/')
@@ -55,51 +69,29 @@ def index():
 
 @app.route('/dashboard')
 def dashboard():
-    # --- Transactions ---
+    # Totals (paid only)
     income_paid = db.session.query(db.func.coalesce(db.func.sum(Transaction.amount), 0.0))\
         .filter_by(type='Income', status='Paid').scalar()
     expense_paid = db.session.query(db.func.coalesce(db.func.sum(Transaction.amount), 0.0))\
         .filter_by(type='Expense', status='Paid').scalar()
     profit = (income_paid or 0.0) - (expense_paid or 0.0)
 
+    # Pending counts
     pending_income = db.session.query(db.func.count(Transaction.id))\
         .filter_by(type='Income', status='Pending').scalar()
     pending_expense = db.session.query(db.func.count(Transaction.id))\
         .filter_by(type='Expense', status='Pending').scalar()
 
+    # Recent transactions
     recent = Transaction.query.order_by(Transaction.date.desc(), Transaction.id.desc()).limit(10).all()
 
-    # --- Work Orders ---
-    total_orders = WorkOrder.query.count()
-    open_orders = WorkOrder.query.filter_by(status="Open").count()
-    in_progress_orders = WorkOrder.query.filter_by(status="In Progress").count()
-    closed_orders = WorkOrder.query.filter_by(status="Closed").count()
-
-    high_priority = WorkOrder.query.filter_by(priority="High").count()
-    medium_priority = WorkOrder.query.filter_by(priority="Medium").count()
-    low_priority = WorkOrder.query.filter_by(priority="Low").count()
-
-    recent_orders = WorkOrder.query.order_by(WorkOrder.created_at.desc()).limit(5).all()
-
-    return render_template(
-        'dashboard.html',
-        income_paid=income_paid or 0.0,
-        expense_paid=expense_paid or 0.0,
-        profit=profit or 0.0,
-        pending_income=pending_income or 0,
-        pending_expense=pending_expense or 0,
-        recent=recent,
-
-        # Work Orders
-        total_orders=total_orders,
-        open_orders=open_orders,
-        in_progress_orders=in_progress_orders,
-        closed_orders=closed_orders,
-        high_priority=high_priority,
-        medium_priority=medium_priority,
-        low_priority=low_priority,
-        recent_orders=recent_orders
-    )
+    return render_template('dashboard.html',
+                           income_paid=income_paid or 0.0,
+                           expense_paid=expense_paid or 0.0,
+                           profit=profit or 0.0,
+                           pending_income=pending_income or 0,
+                           pending_expense=pending_expense or 0,
+                           recent=recent)
 
 # ------------------ Transactions ------------------
 
@@ -222,7 +214,7 @@ def workorders():
         like = f"%{q_text}%"
         query = query.filter(
             db.or_(
-                WorkOrder.customer.ilike(like),
+                WorkOrder.title.ilike(like),
                 WorkOrder.description.ilike(like)
             )
         )
@@ -320,7 +312,77 @@ def delete_workorder(workorder_id):
 
 @app.context_processor
 def inject_version():
-    return dict(version="v0.2.1-dev")
+    return dict(version="v0.2.1-prod")
+
+
+# ------------------ Bookings ------------------
+
+@app.route("/bookings")
+def bookings():
+    q_status = request.args.get("status", "All")
+    query = Booking.query
+    if q_status in ("Paid", "Pending", "Partial"):
+        query = query.filter(Booking.paid_status == q_status)
+
+    all_bookings = query.order_by(Booking.event_date.asc()).all()
+    return render_template("bookings.html", bookings=all_bookings, q_status=q_status)
+
+@app.route("/bookings/add", methods=["GET", "POST"])
+def add_booking():
+    if request.method == "POST":
+        customer = request.form["customer"]
+        booking_type = request.form["booking_type"]
+        event_date = datetime.strptime(request.form["event_date"], "%Y-%m-%d").date()
+        secondary_date_str = request.form.get("secondary_date")
+        secondary_date = datetime.strptime(secondary_date_str, "%Y-%m-%d").date() if secondary_date_str else None
+        expected_income = float(request.form.get("expected_income", 0))
+        paid_status = request.form.get("paid_status", "Pending")
+        notes = request.form.get("notes")
+
+        new_booking = Booking(
+            customer=customer,
+            booking_type=booking_type,
+            event_date=event_date,
+            secondary_date=secondary_date,
+            expected_income=expected_income,
+            paid_status=paid_status,
+            notes=notes
+        )
+        db.session.add(new_booking)
+        db.session.commit()
+        flash("Booking added successfully!", "success")
+        return redirect(url_for("bookings"))
+
+    return render_template("add_booking.html")
+
+@app.route("/bookings/edit/<int:booking_id>", methods=["GET", "POST"])
+def edit_booking(booking_id):
+    booking = Booking.query.get_or_404(booking_id)
+
+    if request.method == "POST":
+        booking.customer = request.form["customer"]
+        booking.booking_type = request.form["booking_type"]
+        booking.event_date = datetime.strptime(request.form["event_date"], "%Y-%m-%d").date()
+        secondary_date_str = request.form.get("secondary_date")
+        booking.secondary_date = datetime.strptime(secondary_date_str, "%Y-%m-%d").date() if secondary_date_str else None
+        booking.expected_income = float(request.form.get("expected_income", 0))
+        booking.paid_status = request.form.get("paid_status")
+        booking.notes = request.form.get("notes")
+
+        db.session.commit()
+        flash("Booking updated successfully!", "success")
+        return redirect(url_for("bookings"))
+
+    return render_template("edit_booking.html", booking=booking)
+
+@app.route("/bookings/delete/<int:booking_id>", methods=["POST"])
+def delete_booking(booking_id):
+    booking = Booking.query.get_or_404(booking_id)
+    db.session.delete(booking)
+    db.session.commit()
+    flash("Booking deleted!", "danger")
+    return redirect(url_for("bookings"))
+
 
 # ------------------ Run ------------------
 if __name__ == '__main__':
