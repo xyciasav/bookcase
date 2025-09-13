@@ -374,11 +374,13 @@ def add_workorder():
         priority = request.form.get("priority", "Medium")
         due_date_str = request.form.get("due_date")
         status = request.form.get("status", "New")
+        booking_id = request.form.get("booking_id") or request.args.get("booking_id")
 
         due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
 
         new_order = WorkOrder(
             customer_id=customer_id,
+            booking_id=int(booking_id) if booking_id else None,   # 🔹 link to booking
             description=description,
             order_type=order_type,
             priority=priority,

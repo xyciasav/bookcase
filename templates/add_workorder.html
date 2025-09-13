@@ -54,6 +54,10 @@
   <div class="col-12">
     <button type="submit" class="btn btn-primary">Save</button>
     <a href="{{ url_for('workorders') }}" class="btn btn-secondary">Cancel</a>
+  
+  {% if request.args.get('booking_id') %}
+  <input type="hidden" name="booking_id" value="{{ request.args.get('booking_id') }}">
+{% endif %}
   </div>
 </form>
 {% endblock %}
