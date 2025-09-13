@@ -36,9 +36,11 @@ class WorkOrder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    asset = db.Column(db.String(120), nullable=True)   # what equipment/job it's for
+    order_type = db.Column(db.String(50), nullable=False)  # Logo, Flyer, Wedding Invite, etc.
     due_date = db.Column(db.Date, nullable=True)
     status = db.Column(db.String(20), default="Open")  # Open, In Progress, Closed
+    file_path = db.Column(db.String(300), nullable=True)  # uploaded file
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
         return f"<WorkOrder {self.id}: {self.title}>"
@@ -181,26 +183,65 @@ def delete_transaction(txn_id):
 
 @app.route("/workorders")
 def workorders():
-    all_orders = WorkOrder.query.order_by(WorkOrder.due_date.asc()).all()
-    return render_template("workorders.html", workorders=all_orders)
+    q_type = request.args.get("type", "All")
+    q_status = request.args.get("status", "All")
+    q_text = request.args.get("q", "").strip()
+
+    query = WorkOrder.query
+
+    if q_type != "All":
+        query = query.filter(WorkOrder.order_type == q_type)
+    if q_status in ("Open", "In Progress", "Closed"):
+        query = query.filter(WorkOrder.status == q_status)
+    if q_text:
+        like = f"%{q_text}%"
+        query = query.filter(
+            db.or_(
+                WorkOrder.title.ilike(like),
+                WorkOrder.description.ilike(like)
+            )
+        )
+
+    all_orders = query.order_by(WorkOrder.due_date.asc()).all()
+    return render_template("workorders.html",
+                           workorders=all_orders,
+                           q_type=q_type,
+                           q_status=q_status,
+                           q_text=q_text)
 
 @app.route("/workorders/add", methods=["GET", "POST"])
 def add_workorder():
     if request.method == "POST":
         title = request.form["title"]
         description = request.form.get("description")
-        asset = request.form.get("asset")
+        order_type = request.form["order_type"]
         due_date_str = request.form.get("due_date")
         status = request.form.get("status", "Open")
 
         due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
 
+        # Handle file upload
+        file_path = None
+        file = request.files.get("file")
+        if file and file.filename and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            base, ext = os.path.splitext(filename)
+            counter = 1
+            while os.path.exists(save_path):
+                filename = f"{base}_{counter}{ext}"
+                save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                counter += 1
+            file.save(save_path)
+            file_path = save_path
+
         new_order = WorkOrder(
             title=title,
             description=description,
-            asset=asset,
+            order_type=order_type,
             due_date=due_date,
-            status=status
+            status=status,
+            file_path=file_path
         )
         db.session.add(new_order)
         db.session.commit()
@@ -216,21 +257,34 @@ def edit_workorder(workorder_id):
     if request.method == "POST":
         order.title = request.form["title"]
         order.description = request.form.get("description")
-        order.asset = request.form.get("asset")
+        order.order_type = request.form["order_type"]
         order.status = request.form.get("status")
 
         due_date_str = request.form.get("due_date")
         order.due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
 
+        # Replace file if new one uploaded
+        file = request.files.get("file")
+        if file and file.filename and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(save_path)
+            order.file_path = save_path
+
         db.session.commit()
         flash("Work order updated successfully!", "success")
         return redirect(url_for("workorders"))
 
-    return render_template("edit_workorder.html", order=order)
+    return render_template("add_workorder.html", order=order)
 
 @app.route("/workorders/delete/<int:workorder_id>", methods=["POST"])
 def delete_workorder(workorder_id):
     order = WorkOrder.query.get_or_404(workorder_id)
+    if order.file_path and os.path.exists(order.file_path):
+        try:
+            os.remove(order.file_path)
+        except Exception:
+            pass
     db.session.delete(order)
     db.session.commit()
     flash("Work order deleted!", "danger")
