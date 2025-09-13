@@ -7,7 +7,7 @@ import csv
 from flask import Response
 
 # --- Config ---
-APP_VERSION = "v0.3.2-dev"  # update manually when you push changes
+APP_VERSION = "v0.3.3-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -89,8 +89,15 @@ class Customer(db.Model):
 def index():
     return redirect(url_for('dashboard'))
 
+@app.route("/bookings/<int:booking_id>")
+def view_booking(booking_id):
+    booking = Booking.query.get_or_404(booking_id)
+    return render_template("view_booking.html", booking=booking)
+
 @app.route('/dashboard')
 def dashboard():
+
+    
     # --- Transactions ---
     income_paid = db.session.query(db.func.coalesce(db.func.sum(Transaction.amount), 0.0))\
         .filter_by(type='Income', status='Paid').scalar()
@@ -352,6 +359,8 @@ def workorders():
 
 @app.route("/workorders/add", methods=["GET", "POST"])
 def add_workorder():
+    booking_id = request.args.get("booking_id", type=int)
+
     if request.method == "POST":
         customer_id = int(request.form["customer_id"])
         description = request.form.get("description")
@@ -359,40 +368,25 @@ def add_workorder():
         priority = request.form.get("priority", "Medium")
         due_date_str = request.form.get("due_date")
         status = request.form.get("status", "New")
-
         due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
-
-        # Handle file upload
-        file_path = None
-        file = request.files.get("file")
-        if file and file.filename and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            base, ext = os.path.splitext(filename)
-            counter = 1
-            while os.path.exists(save_path):
-                filename = f"{base}_{counter}{ext}"
-                save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                counter += 1
-            file.save(save_path)
-            file_path = save_path
 
         new_order = WorkOrder(
             customer_id=customer_id,
+            booking_id=booking_id,  # ✅ tie to booking if provided
             description=description,
             order_type=order_type,
             priority=priority,
             due_date=due_date,
             status=status,
-            file_path=file_path
         )
         db.session.add(new_order)
         db.session.commit()
         flash("Work order added successfully!", "success")
-        return redirect(url_for("workorders"))
+        return redirect(url_for("view_booking", booking_id=booking_id) if booking_id else url_for("workorders"))
 
     customers = Customer.query.order_by(Customer.name.asc()).all()
-    return render_template("add_workorder.html", customers=customers)
+    bookings = Booking.query.order_by(Booking.event_date.asc()).all()
+    return render_template("add_workorder.html", customers=customers, bookings=bookings, booking_id=booking_id)
 
 @app.route("/workorders/edit/<int:workorder_id>", methods=["GET", "POST"])
 def edit_workorder(workorder_id):

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Booking Details</h2>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">{{ booking.booking_type }}</h5>
+      <p><strong>Customer:</strong> {{ booking.customer_obj.name }}</p>
+      <p><strong>Event Date:</strong> {{ booking.event_date }}</p>
+      {% if booking.secondary_date %}
+        <p><strong>Secondary Date:</strong> {{ booking.secondary_date }}</p>
+      {% endif %}
+      <p><strong>Expected Income:</strong> ${{ "%.2f"|format(booking.expected_income) }}</p>
+      <p><strong>Status:</strong> {{ booking.paid_status }}</p>
+      {% if booking.notes %}
+        <p><strong>Notes:</strong> {{ booking.notes }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Work Orders tied to this booking -->
+  <h3>Work Orders</h3>
+  {% if booking.workorders %}
+    <ul class="list-group mb-3">
+      {% for order in booking.workorders %}
+        <li class="list-group-item">
+          <strong>{{ order.order_type }}</strong> — {{ order.status }}
+          {% if order.due_date %}
+            (Due: {{ order.due_date }})
+          {% endif %}
+          <a href="{{ url_for('edit_workorder', workorder_id=order.id) }}" class="btn btn-sm btn-secondary float-end ms-2">Edit</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p><em>No work orders yet for this booking.</em></p>
+  {% endif %}
+
+  <!-- Button to create new work order tied to this booking -->
+  <a href="{{ url_for('add_workorder', booking_id=booking.id) }}" class="btn btn-primary">
+    ➕ Create Work Order for this Booking
+  </a>
+
+  <a href="{{ url_for('bookings') }}" class="btn btn-secondary">Back to Bookings</a>
+</div>
+{% endblock %}
