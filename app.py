@@ -446,9 +446,8 @@ def edit_booking(booking_id):
         expected_income = float(request.form.get("expected_income", 0))
         paid_status = request.form.get("paid_status", "Pending")
         notes = request.form.get("notes")
-        amount_paid = float(request.form.get("amount_paid", 0))
 
-        # Update booking itself
+        # Update booking
         booking.customer = customer
         booking.booking_type = booking_type
         booking.event_date = event_date
@@ -457,25 +456,13 @@ def edit_booking(booking_id):
         booking.paid_status = paid_status
         booking.notes = notes
 
-        # 🔹 Leave transaction history intact, just create new ones
+        # --- Transaction logging ---
         if paid_status == "Paid":
             txn = Transaction(
                 type="Income",
                 category="Booking",
                 party=customer,
-                description=f"{booking_type} Booking (Updated)",
-                amount=expected_income,
-                status="Paid",
-                date=event_date
-            )
-            db.session.add(txn)
-
-        if paid_status == "Paid":
-            txn = Transaction(
-                type="Income",
-                category="Booking",
-                party=customer,
-                description=f"{booking_type} Booking (Paid)",
+                description=f"{booking_type} Booking (Paid in Full)",
                 amount=expected_income,
                 status="Paid",
                 date=datetime.utcnow().date(),
@@ -483,7 +470,6 @@ def edit_booking(booking_id):
             db.session.add(txn)
 
         elif paid_status == "Partial":
-            # Only record what was actually paid
             partial_amount = float(request.form.get("partial_amount", 0))
             if partial_amount > 0:
                 txn = Transaction(
@@ -498,7 +484,7 @@ def edit_booking(booking_id):
                 db.session.add(txn)
 
         db.session.commit()
-        flash("Booking updated successfully (history preserved)!", "success")
+        flash("Booking updated successfully!", "success")
         return redirect(url_for("bookings"))
 
     return render_template("edit_booking.html", booking=booking)
