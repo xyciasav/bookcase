@@ -7,6 +7,7 @@ services:
     container_name: bookcase
     environment:
       FLASK_ENV: production
+      SECRET_KEY=4e1d86a7f8a748c8b13c02d6a1f62f09b5c8a3d56c72c4fca0c184d5275cbd9b
     ports:
       - "5050:5000"
     volumes:
