@@ -137,6 +137,42 @@
             </div>
           </div>
         </td>
+
+              <td>
+        <!-- Open button triggers modal -->
+        <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#orderModal{{ order.id }}">
+          Open
+        </button>
+
+        <!-- Modal -->
+        <div class="modal fade" id="orderModal{{ order.id }}" tabindex="-1" aria-labelledby="orderModalLabel{{ order.id }}" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="orderModalLabel{{ order.id }}">
+                  Work Order #{{ order.id }} - {{ order.customer }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <p><strong>Customer:</strong> {{ order.customer }}</p>
+                <p><strong>Type:</strong> {{ order.order_type }}</p>
+                <p><strong>Status:</strong> {{ order.status }}</p>
+                <p><strong>Priority:</strong> {{ order.priority }}</p>
+                <p><strong>Due Date:</strong> {{ order.due_date.strftime('%Y-%m-%d') if order.due_date else 'N/A' }}</p>
+                <p><strong>Description:</strong> {{ order.description or "No description provided" }}</p>
+                {% if order.file_path %}
+                  <p><strong>File:</strong> <a href="{{ '/' + order.file_path }}" target="_blank">View</a></p>
+                {% endif %}
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </td>
+
       </tr>
       {% endfor %}
     </tbody>
