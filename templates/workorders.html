@@ -15,7 +15,7 @@
   <div class="col-md-2">
     <div class="card">
       <div class="card-body">
-        <h5>Open</h5>
+        <h5>New</h5>
         <p class="fs-4">{{ open_orders }}</p>
       </div>
     </div>
@@ -62,7 +62,7 @@
   <div class="col-sm-3">
     <select class="form-select" name="status">
       <option value="All" {{ 'selected' if q_status=='All' else '' }}>All Status</option>
-      <option value="Open" {{ 'selected' if q_status=='Open' else '' }}>Open</option>
+      <option value="New" {{ 'selected' if q_status=='New' else '' }}>New</option>
       <option value="In Progress" {{ 'selected' if q_status=='In Progress' else '' }}>In Progress</option>
       <option value="Closed" {{ 'selected' if q_status=='Closed' else '' }}>Closed</option>
     </select>

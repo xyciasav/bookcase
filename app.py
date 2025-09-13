@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 
 # --- Config ---
-APP_VERSION = "v0.2.4-dev"  # update manually when you push changes
+APP_VERSION = "v0.2.5-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -40,7 +40,7 @@ class WorkOrder(db.Model):
     description = db.Column(db.Text, nullable=True)
     order_type = db.Column(db.String(50), nullable=False)  # Logo, Flyer, etc.
     due_date = db.Column(db.Date, nullable=True)
-    status = db.Column(db.String(20), default="Open")  # Open, In Progress, Closed
+    status = db.Column(db.String(20), default="New")  # New, In Progress, Closed
     file_path = db.Column(db.String(300), nullable=True)  # uploaded file
     priority = db.Column(db.String(20), default="Medium")  # Low, Medium, High
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -93,7 +93,7 @@ def dashboard():
 
     # --- Work Orders ---
     total_orders = db.session.query(db.func.count(WorkOrder.id)).scalar()
-    open_orders = db.session.query(db.func.count(WorkOrder.id)).filter_by(status="Open").scalar()
+    open_orders = db.session.query(db.func.count(WorkOrder.id)).filter_by(status="New").scalar()
     in_progress_orders = db.session.query(db.func.count(WorkOrder.id)).filter_by(status="In Progress").scalar()
     closed_orders = db.session.query(db.func.count(WorkOrder.id)).filter_by(status="Closed").scalar()
     high_priority = db.session.query(db.func.count(WorkOrder.id)).filter_by(priority="High").scalar()
@@ -245,7 +245,7 @@ def workorders():
 
     if q_type != "All":
         query = query.filter(WorkOrder.order_type == q_type)
-    if q_status in ("Open", "In Progress", "Closed"):
+    if q_status in ("New", "In Progress", "Closed"):
         query = query.filter(WorkOrder.status == q_status)
     if q_text:
         like = f"%{q_text}%"
@@ -260,7 +260,7 @@ def workorders():
 
     # 🔹 Stats for tiles
     total_orders = WorkOrder.query.count()
-    open_orders = WorkOrder.query.filter_by(status="Open").count()
+    open_orders = WorkOrder.query.filter_by(status="New").count()
     in_progress_orders = WorkOrder.query.filter_by(status="In Progress").count()
     closed_orders = WorkOrder.query.filter_by(status="Closed").count()
     high_priority = WorkOrder.query.filter_by(priority="High").count()
@@ -286,7 +286,7 @@ def add_workorder():
         order_type = request.form["order_type"]
         priority = request.form.get("priority", "Medium")
         due_date_str = request.form.get("due_date")
-        status = request.form.get("status", "Open")
+        status = request.form.get("status", "New")
 
         due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
 
