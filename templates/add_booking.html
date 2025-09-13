@@ -13,13 +13,18 @@
                 {% endfor %}
             </select>
         </div>
-
         <!-- Booking Type -->
         <div class="mb-3">
             <label for="booking_type" class="form-label">Booking Type</label>
-            <input type="text" class="form-control" id="booking_type" name="booking_type" required>
+            <select class="form-select" id="booking_type" name="booking_type" required>
+                <option value="">Select type...</option>
+                <option value="Wedding">Wedding</option>
+                <option value="Engagement">Engagement</option>
+                <option value="Portrait">Portrait</option>
+                <option value="Event">Event</option>
+                <option value="Other">Other</option>
+            </select>
         </div>
-
         <!-- Event Date -->
         <div class="mb-3">
             <label for="event_date" class="form-label">Event Date</label>
