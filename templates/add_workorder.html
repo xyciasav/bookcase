@@ -14,16 +14,13 @@
       {% endfor %}
     </select>
   </div>
-  <div class="col-md-6">
+    <div class="col-md-6">
     <label class="form-label">Type</label>
     <select name="order_type" class="form-select" required>
-      <option value="Logo">Logo</option>
-      <option value="Logo + Branding">Logo + Branding</option>
-      <option value="Flyer">Flyer</option>
-      <option value="Birthday Invite">Birthday Invite</option>
-      <option value="Wedding Invite">Wedding Invite</option>
-      <option value="Engagement Announcement">Engagement Announcement</option>
-      <option value="Save the Date">Save the Date</option>
+      <option value="">Select a type...</option>
+      {% for t in job_types %}
+        <option value="{{ t.name }}">{{ t.name }}</option>
+      {% endfor %}
     </select>
   </div>
   <div class="col-md-6">
