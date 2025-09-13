@@ -158,6 +158,9 @@ def edit_transaction(transaction_id):
         txn.amount = float(request.form["amount"])
         txn.status = request.form["status"]
 
+        # ✅ Convert string to Python date object
+        txn.date = datetime.strptime(request.form["date"], "%Y-%m-%d").date()
+
         # If user uploads a new receipt, save it
         receipt = request.files.get("receipt")
         if receipt:
