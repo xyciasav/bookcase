@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 
 # --- Config ---
-APP_VERSION = "v0.2.6-dev"  # update manually when you push changes
+APP_VERSION = "v0.2.7-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -470,31 +470,32 @@ def edit_booking(booking_id):
             )
             db.session.add(txn)
 
-        elif paid_status == "Partial":
-            if amount_paid > 0:
-                paid_txn = Transaction(
-                    type="Income",
-                    category="Booking",
-                    party=customer,
-                    description=f"{booking_type} Booking (Partial Payment - Updated)",
-                    amount=amount_paid,
-                    status="Paid",
-                    date=event_date
-                )
-                db.session.add(paid_txn)
+        if paid_status == "Paid":
+            txn = Transaction(
+                type="Income",
+                category="Booking",
+                party=customer,
+                description=f"{booking_type} Booking (Paid)",
+                amount=expected_income,
+                status="Paid",
+                date=datetime.utcnow().date(),
+            )
+            db.session.add(txn)
 
-            balance = expected_income - amount_paid
-            if balance > 0:
-                pending_txn = Transaction(
+        elif paid_status == "Partial":
+            # Only record what was actually paid
+            partial_amount = float(request.form.get("partial_amount", 0))
+            if partial_amount > 0:
+                txn = Transaction(
                     type="Income",
                     category="Booking",
                     party=customer,
-                    description=f"{booking_type} Booking (Remaining Balance - Updated)",
-                    amount=balance,
-                    status="Pending",
-                    date=event_date
+                    description=f"{booking_type} Booking (Partial Payment)",
+                    amount=partial_amount,
+                    status="Paid",
+                    date=datetime.utcnow().date(),
                 )
-                db.session.add(pending_txn)
+                db.session.add(txn)
 
         db.session.commit()
         flash("Booking updated successfully (history preserved)!", "success")
