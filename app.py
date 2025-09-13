@@ -46,7 +46,7 @@ class WorkOrder(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
-        return f"<WorkOrder {self.id}: {self.title} ({self.priority})>"
+        return f"<WorkOrder {self.id}: {self.customer} ({self.priority})>"
 
 # --- Routes ---
 @app.route('/')
@@ -55,29 +55,51 @@ def index():
 
 @app.route('/dashboard')
 def dashboard():
-    # Totals (paid only)
+    # --- Transactions ---
     income_paid = db.session.query(db.func.coalesce(db.func.sum(Transaction.amount), 0.0))\
         .filter_by(type='Income', status='Paid').scalar()
     expense_paid = db.session.query(db.func.coalesce(db.func.sum(Transaction.amount), 0.0))\
         .filter_by(type='Expense', status='Paid').scalar()
     profit = (income_paid or 0.0) - (expense_paid or 0.0)
 
-    # Pending counts
     pending_income = db.session.query(db.func.count(Transaction.id))\
         .filter_by(type='Income', status='Pending').scalar()
     pending_expense = db.session.query(db.func.count(Transaction.id))\
         .filter_by(type='Expense', status='Pending').scalar()
 
-    # Recent transactions
     recent = Transaction.query.order_by(Transaction.date.desc(), Transaction.id.desc()).limit(10).all()
 
-    return render_template('dashboard.html',
-                           income_paid=income_paid or 0.0,
-                           expense_paid=expense_paid or 0.0,
-                           profit=profit or 0.0,
-                           pending_income=pending_income or 0,
-                           pending_expense=pending_expense or 0,
-                           recent=recent)
+    # --- Work Orders ---
+    total_orders = WorkOrder.query.count()
+    open_orders = WorkOrder.query.filter_by(status="Open").count()
+    in_progress_orders = WorkOrder.query.filter_by(status="In Progress").count()
+    closed_orders = WorkOrder.query.filter_by(status="Closed").count()
+
+    high_priority = WorkOrder.query.filter_by(priority="High").count()
+    medium_priority = WorkOrder.query.filter_by(priority="Medium").count()
+    low_priority = WorkOrder.query.filter_by(priority="Low").count()
+
+    recent_orders = WorkOrder.query.order_by(WorkOrder.created_at.desc()).limit(5).all()
+
+    return render_template(
+        'dashboard.html',
+        income_paid=income_paid or 0.0,
+        expense_paid=expense_paid or 0.0,
+        profit=profit or 0.0,
+        pending_income=pending_income or 0,
+        pending_expense=pending_expense or 0,
+        recent=recent,
+
+        # Work Orders
+        total_orders=total_orders,
+        open_orders=open_orders,
+        in_progress_orders=in_progress_orders,
+        closed_orders=closed_orders,
+        high_priority=high_priority,
+        medium_priority=medium_priority,
+        low_priority=low_priority,
+        recent_orders=recent_orders
+    )
 
 # ------------------ Transactions ------------------
 
@@ -200,7 +222,7 @@ def workorders():
         like = f"%{q_text}%"
         query = query.filter(
             db.or_(
-                WorkOrder.title.ilike(like),
+                WorkOrder.customer.ilike(like),
                 WorkOrder.description.ilike(like)
             )
         )
