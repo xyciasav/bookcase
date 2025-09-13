@@ -7,7 +7,7 @@ import csv
 from flask import Response
 
 # --- Config ---
-APP_VERSION = "v0.4.10-dev"  # update manually when you push changes
+APP_VERSION = "v0.4.11-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -712,6 +712,27 @@ def invoices_list():
     invoices = Invoice.query.order_by(Invoice.created_at.desc()).all()
     return render_template("invoices.html", invoices=invoices)
 
+@app.route("/invoices/<int:invoice_id>/mark_paid", methods=["POST"])
+def mark_invoice_paid(invoice_id):
+    invoice = Invoice.query.get_or_404(invoice_id)
+    invoice.status = "Paid"
+    db.session.commit()
+
+    # Optional: log a transaction when invoice is marked paid
+    txn = Transaction(
+        type="Income",
+        category="Invoice",
+        party=invoice.customer_obj.name,
+        description=f"Invoice #{invoice.id}",
+        amount=invoice.total,
+        status="Paid",
+        date=datetime.utcnow().date(),
+    )
+    db.session.add(txn)
+    db.session.commit()
+
+    flash(f"Invoice #{invoice.id} marked as Paid", "success")
+    return redirect(url_for("view_invoice", invoice_id=invoice.id))
 
 # ------------------ Settings (Job Types) ------------------
 
