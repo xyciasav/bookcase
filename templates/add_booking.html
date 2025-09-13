@@ -2,33 +2,50 @@
 {% block content %}
 <h1>Add Booking</h1>
 
-<form method="POST">
+<form method="post">
   <div class="mb-3">
-    <label for="customer" class="form-label">Customer</label>
-    <input type="text" class="form-control" name="customer" required>
+    <label class="form-label">Customer</label>
+    <input type="text" name="customer" class="form-control" required>
   </div>
 
   <div class="mb-3">
-    <label for="booking_type" class="form-label">Booking Type</label>
-    <input type="text" class="form-control" name="booking_type" required>
+    <label class="form-label">Type</label>
+    <select name="booking_type" class="form-select" required>
+      <option>Logo</option>
+      <option>Logo + Branding</option>
+      <option>Flyer</option>
+      <option>Birthday Invite</option>
+      <option>Wedding Invite</option>
+      <option>Engagement Announcement</option>
+      <option>Save the Date</option>
+      <option>Family Portraits</option>
+      <option>Headshots</option>
+      <option>Wedding Photography</option>
+      <option>Wedding Videography</option>
+    </select>
   </div>
 
   <div class="mb-3">
-    <label for="event_date" class="form-label">Event Date</label>
-    <input type="date" class="form-control" name="event_date" required>
+    <label class="form-label">Event Date</label>
+    <input type="date" name="event_date" class="form-control" required>
   </div>
 
   <div class="mb-3">
-    <label for="expected_income" class="form-label">Expected Income</label>
-    <input type="number" step="0.01" class="form-control" name="expected_income" required>
+    <label class="form-label">Secondary Date (optional)</label>
+    <input type="date" name="secondary_date" class="form-control">
   </div>
 
   <div class="mb-3">
-    <label for="paid_status" class="form-label">Payment Status</label>
-    <select class="form-select" name="paid_status" required>
-      <option value="Pending">Pending</option>
-      <option value="Partial">Partial</option>
-      <option value="Paid">Paid</option>
+    <label class="form-label">Expected Income</label>
+    <input type="number" step="0.01" name="expected_income" class="form-control" required>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Paid Status</label>
+    <select name="paid_status" class="form-select">
+      <option>Pending</option>
+      <option>Partial</option>
+      <option>Paid</option>
     </select>
   </div>
 
@@ -38,12 +55,13 @@
     <input type="number" step="0.01" min="0" name="partial_amount" id="partial_amount" class="form-control">
     <small class="form-text text-muted">Only used if status = Partial</small>
   </div>
-
+  
   <div class="mb-3">
-    <label for="notes" class="form-label">Notes</label>
-    <textarea class="form-control" name="notes"></textarea>
+    <label class="form-label">Notes</label>
+    <textarea name="notes" class="form-control"></textarea>
   </div>
 
-  <button type="submit" class="btn btn-success">Save Booking</button>
+  <button type="submit" class="btn btn-success">Save</button>
+  <a href="{{ url_for('bookings') }}" class="btn btn-secondary">Cancel</a>
 </form>
 {% endblock %}
