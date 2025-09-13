@@ -7,7 +7,7 @@ import csv
 from flask import Response
 
 # --- Config ---
-APP_VERSION = "v0.3.4-dev"  # update manually when you push changes
+APP_VERSION = "v0.4.0-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -83,6 +83,14 @@ class Customer(db.Model):
 
     def __repr__(self):
         return f"<Customer {self.name}>"
+    
+class JobType(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<JobType {self.name}>"
 
 # --- Routes ---
 @app.route('/')
@@ -369,29 +377,13 @@ def add_workorder():
 
         due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
 
-        # Handle file upload
-        file_path = None
-        file = request.files.get("file")
-        if file and file.filename and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            base, ext = os.path.splitext(filename)
-            counter = 1
-            while os.path.exists(save_path):
-                filename = f"{base}_{counter}{ext}"
-                save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                counter += 1
-            file.save(save_path)
-            file_path = save_path
-
         new_order = WorkOrder(
             customer_id=customer_id,
             description=description,
             order_type=order_type,
             priority=priority,
             due_date=due_date,
-            status=status,
-            file_path=file_path
+            status=status
         )
         db.session.add(new_order)
         db.session.commit()
@@ -407,7 +399,13 @@ def add_workorder():
             preselected_customer = booking.customer_id
 
     customers = Customer.query.order_by(Customer.name.asc()).all()
-    return render_template("add_workorder.html", customers=customers, preselected_customer=preselected_customer)
+    job_types = JobType.query.order_by(JobType.name.asc()).all()
+    return render_template(
+        "add_workorder.html",
+        customers=customers,
+        job_types=job_types,
+        preselected_customer=preselected_customer
+    )
 
 @app.route("/workorders/edit/<int:workorder_id>", methods=["GET", "POST"])
 def edit_workorder(workorder_id):
@@ -422,20 +420,14 @@ def edit_workorder(workorder_id):
         due_date_str = request.form.get("due_date")
         order.due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
 
-        # Replace file if new one uploaded
-        file = request.files.get("file")
-        if file and file.filename and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(save_path)
-            order.file_path = save_path
-
         db.session.commit()
         flash("Work order updated successfully!", "success")
         return redirect(url_for("workorders"))
 
     customers = Customer.query.order_by(Customer.name.asc()).all()
-    return render_template("edit_workorder.html", order=order, customers=customers)
+    job_types = JobType.query.order_by(JobType.name.asc()).all()   # 🔹 ADD THIS
+    return render_template("edit_workorder.html", order=order, customers=customers, job_types=job_types)
+
 
 @app.route("/workorders/delete/<int:workorder_id>", methods=["POST"])
 def delete_workorder(workorder_id):
@@ -607,6 +599,14 @@ def view_customer(customer_id):
     customer = Customer.query.get_or_404(customer_id)
     return render_template("view_customer.html", customer=customer)
 
+
+@app.before_first_request
+def seed_job_types():
+    if JobType.query.count() == 0:
+        defaults = ["Design", "Photography", "Videography", "Print", "Consultation", "Other"]
+        for d in defaults:
+            db.session.add(JobType(name=d))
+        db.session.commit()
 
 # ------------------ Run ------------------
 @app.context_processor
