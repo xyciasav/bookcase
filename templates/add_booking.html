@@ -1,71 +1,77 @@
 {% extends 'base.html' %}
 {% block content %}
-<h1>Add Booking</h1>
+<div class="container mt-4">
+  <h2>Add Booking</h2>
 
-<div class="mb-3">
-  <label for="customer_id" class="form-label">Customer</label>
-  <select class="form-select" id="customer_id" name="customer_id" required>
-    <option value="">Select a customer...</option>
-    {% for c in customers %}
-      <option value="{{ c.id }}">{{ c.name }}</option>
-    {% endfor %}
-  </select>
+  <form method="POST" action="{{ url_for('add_booking') }}">
+    <!-- Customer -->
+    <div class="mb-3">
+      <label for="customer_id" class="form-label">Customer</label>
+      <select class="form-select" id="customer_id" name="customer_id" required>
+        <option value="">Select a customer...</option>
+        {% for c in customers %}
+          <option value="{{ c.id }}">{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Booking type -->
+    <div class="mb-3">
+      <label for="booking_type" class="form-label">Booking Type</label>
+      <input type="text" class="form-control" id="booking_type" name="booking_type" required>
+    </div>
+
+    <!-- Event date -->
+    <div class="mb-3">
+      <label for="event_date" class="form-label">Event Date</label>
+      <input type="date" class="form-control" id="event_date" name="event_date" required>
+    </div>
+
+    <!-- Secondary date -->
+    <div class="mb-3">
+      <label for="secondary_date" class="form-label">Secondary Date</label>
+      <input type="date" class="form-control" id="secondary_date" name="secondary_date">
+    </div>
+
+    <!-- Expected income -->
+    <div class="mb-3">
+      <label for="expected_income" class="form-label">Expected Income</label>
+      <input type="number" step="0.01" class="form-control" id="expected_income" name="expected_income" required>
+    </div>
+
+    <!-- Paid status -->
+    <div class="mb-3">
+      <label for="paid_status" class="form-label">Payment Status</label>
+      <select class="form-select" id="paid_status" name="paid_status" required onchange="togglePartial()">
+        <option value="Pending">Pending</option>
+        <option value="Partial">Partial</option>
+        <option value="Paid">Paid</option>
+      </select>
+    </div>
+
+    <!-- Partial payment (only shows if status = Partial) -->
+    <div class="mb-3" id="partial-container" style="display:none;">
+      <label for="partial_amount" class="form-label">Partial Amount</label>
+      <input type="number" step="0.01" class="form-control" id="partial_amount" name="partial_amount">
+    </div>
+
+    <!-- Notes -->
+    <div class="mb-3">
+      <label for="notes" class="form-label">Notes</label>
+      <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+    </div>
+
+    <!-- Submit -->
+    <button type="submit" class="btn btn-primary">Save Booking</button>
+    <a href="{{ url_for('bookings') }}" class="btn btn-secondary">Cancel</a>
+  </form>
 </div>
 
-  <div class="mb-3">
-    <label class="form-label">Type</label>
-    <select name="booking_type" class="form-select" required>
-      <option>Logo</option>
-      <option>Logo + Branding</option>
-      <option>Flyer</option>
-      <option>Birthday Invite</option>
-      <option>Wedding Invite</option>
-      <option>Engagement Announcement</option>
-      <option>Save the Date</option>
-      <option>Family Portraits</option>
-      <option>Headshots</option>
-      <option>Wedding Photography</option>
-      <option>Wedding Videography</option>
-    </select>
-  </div>
-
-  <div class="mb-3">
-    <label class="form-label">Event Date</label>
-    <input type="date" name="event_date" class="form-control" required>
-  </div>
-
-  <div class="mb-3">
-    <label class="form-label">Secondary Date (optional)</label>
-    <input type="date" name="secondary_date" class="form-control">
-  </div>
-
-  <div class="mb-3">
-    <label class="form-label">Expected Income</label>
-    <input type="number" step="0.01" name="expected_income" class="form-control" required>
-  </div>
-
-  <div class="mb-3">
-    <label class="form-label">Paid Status</label>
-    <select name="paid_status" class="form-select">
-      <option>Pending</option>
-      <option>Partial</option>
-      <option>Paid</option>
-    </select>
-  </div>
-
-  <!-- ✅ Partial payment input -->
-  <div class="mb-3">
-    <label for="partial_amount" class="form-label">Partial Payment Amount</label>
-    <input type="number" step="0.01" min="0" name="partial_amount" id="partial_amount" class="form-control">
-    <small class="form-text text-muted">Only used if status = Partial</small>
-  </div>
-  
-  <div class="mb-3">
-    <label class="form-label">Notes</label>
-    <textarea name="notes" class="form-control"></textarea>
-  </div>
-
-  <button type="submit" class="btn btn-success">Save</button>
-  <a href="{{ url_for('bookings') }}" class="btn btn-secondary">Cancel</a>
-</form>
+<script>
+function togglePartial() {
+  const status = document.getElementById("paid_status").value;
+  document.getElementById("partial-container").style.display = 
+      (status === "Partial") ? "block" : "none";
+}
+</script>
 {% endblock %}
