@@ -2,8 +2,6 @@
 {% block content %}
 <h1 class="mb-4">Transactions</h1>
 
-<a href="{{ url_for('add_transaction') }}" class="btn btn-primary mb-3">Add Transaction</a>
-
 <form class="row g-2 mb-3" method="get">
   <div class="col-sm-3">
     <select class="form-select" name="type">
@@ -26,6 +24,8 @@
     <button class="btn btn-primary" type="submit">Filter</button>
   </div>
 </form>
+
+<a href="{{ url_for('add_transaction') }}" class="btn btn-primary mb-3">Add Transaction</a>
 
 <div class="table-responsive">
   <table class="table table-striped align-middle">
