@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
+import csv
+from flask import Response
 
 # --- Config ---
 APP_VERSION = "v0.2.7-dev"  # update manually when you push changes
@@ -155,6 +157,56 @@ def transactions():
 
     txns = query.order_by(Transaction.date.desc(), Transaction.id.desc()).all()
     return render_template('transactions.html', transactions=txns, q_type=q_type, q_status=q_status, q_text=q_text)
+
+@app.route('/transactions/export')
+def export_transactions():
+    q_type = request.args.get('type', 'All')
+    q_status = request.args.get('status', 'All')
+    q_text = request.args.get('q', '').strip()
+
+    query = Transaction.query
+    if q_type in ('Income', 'Expense'):
+        query = query.filter(Transaction.type == q_type)
+    if q_status in ('Paid', 'Pending'):
+        query = query.filter(Transaction.status == q_status)
+    if q_text:
+        like = f"%{q_text}%"
+        query = query.filter(
+            db.or_(
+                Transaction.category.ilike(like),
+                Transaction.description.ilike(like),
+                Transaction.party.ilike(like)
+            )
+        )
+
+    txns = query.order_by(Transaction.date.desc(), Transaction.id.desc()).all()
+
+    # Create CSV
+    def generate():
+        data = [
+            ["Date", "Type", "Category", "Party", "Description", "Amount", "Status"]
+        ]
+        for t in txns:
+            data.append([
+                t.date.strftime('%Y-%m-%d'),
+                t.type,
+                t.category,
+                t.party or "",
+                t.description or "",
+                f"{t.amount:.2f}",
+                t.status
+            ])
+        # Write to CSV
+        output = []
+        for row in data:
+            output.append(",".join(f'"{col}"' for col in row))
+        return "\n".join(output)
+
+    return Response(
+        generate(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment;filename=transactions.csv"}
+    )
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_transaction():
