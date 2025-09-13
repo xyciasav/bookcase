@@ -7,7 +7,7 @@ import csv
 from flask import Response
 
 # --- Config ---
-APP_VERSION = "v0.4.7-dev"  # update manually when you push changes
+APP_VERSION = "v0.4.8-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -77,6 +77,8 @@ class Customer(db.Model):
     address = db.Column(db.String(250), nullable=True)
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    invoices = db.relationship("Invoice", backref="customer_obj", lazy=True)
+
 
     # relationships
     bookings = db.relationship("Booking", backref="customer_obj", lazy=True)
@@ -673,6 +675,38 @@ def view_invoice(invoice_id):
     customer = Customer.query.get(invoice.customer_id)
     return render_template("view_invoice.html", invoice=invoice, customer=customer)
 
+@app.route("/invoices/create_from_booking/<int:booking_id>", methods=["POST"])
+def create_invoice_from_booking(booking_id):
+    booking = Booking.query.get_or_404(booking_id)
+    customer = booking.customer_obj
+
+    workorder_ids = request.form.getlist("workorders")
+    if not workorder_ids:
+        flash("No work orders selected.", "warning")
+        return redirect(url_for("view_booking", booking_id=booking.id))
+
+    invoice = Invoice(customer_id=customer.id, status="Draft")
+    db.session.add(invoice)
+    db.session.commit()
+
+    total = 0.0
+    for wid in workorder_ids:
+        order = WorkOrder.query.get(int(wid))
+        if order:
+            item = InvoiceItem(
+                invoice_id=invoice.id,
+                description=order.order_type,
+                price=order.price,
+                quantity=1
+            )
+            total += order.price
+            db.session.add(item)
+
+    invoice.total = total
+    db.session.commit()
+
+    flash("Invoice created!", "success")
+    return redirect(url_for("view_invoice", invoice_id=invoice.id))
 
 # ------------------ Settings (Job Types) ------------------
 
