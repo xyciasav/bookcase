@@ -108,9 +108,6 @@
           {% endif %}
         </td>
         <td>
-          <a href="{{ url_for('edit_workorder', workorder_id=order.id) }}" class="btn btn-warning btn-sm">Edit</a>
-
-        <td>
           <!-- Open button triggers modal -->
           <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#orderModal{{ order.id }}">
             Open
