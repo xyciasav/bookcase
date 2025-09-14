@@ -11,7 +11,7 @@ import shutil
 import csv
 
 # --- Config ---
-APP_VERSION = "v0.5.0-dev"  # update manually when you push changes
+APP_VERSION = "v0.5.1-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -105,7 +105,12 @@ class Invoice(db.Model):
 
     customer = db.relationship("Customer", back_populates="invoices")
     booking = db.relationship("Booking", back_populates="invoices")
-    items = db.relationship("InvoiceItem", backref="invoice", lazy=True)
+    items = db.relationship(
+        "InvoiceItem",
+        backref="invoice",
+        lazy=True,
+        cascade="all, delete-orphan"  
+    )
 
 class InvoiceItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
