@@ -648,7 +648,7 @@ def seed_job_types():
 
 # -------------------- Invoices -----------------------------
 
-@app.route("/invoices")
+@app.route("/invoices", endpoint="invoices")
 def invoices_list():
     invoices = Invoice.query.order_by(Invoice.created_at.desc()).all()
     return render_template("invoices.html", invoices=invoices)
