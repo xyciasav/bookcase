@@ -52,6 +52,11 @@
     </table>
   </div>
 
+<a href="{{ url_for('invoice_pdf', invoice_id=invoice.id) }}" class="btn btn-info">
+  🖨 Download PDF
+</a>
+
+
   <!-- Invoice Status -->
   <div class="mb-3">
     <strong>Status:</strong> {{ invoice.status }}

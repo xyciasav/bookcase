@@ -5,9 +5,14 @@ from datetime import datetime
 import os
 import csv
 from flask import Response
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from flask import send_file
 
 # --- Config ---
-APP_VERSION = "v0.4.15-dev"  # update manually when you push changes
+APP_VERSION = "v0.4.16-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -751,6 +756,57 @@ def delete_invoice(invoice_id):
     db.session.commit()
     flash(f"Invoice #{invoice.id} deleted!", "danger")
     return redirect(url_for("invoices_list"))
+
+@app.route("/invoices/<int:invoice_id>/pdf")
+def invoice_pdf(invoice_id):
+    invoice = Invoice.query.get_or_404(invoice_id)
+    customer = invoice.customer_obj
+
+    filename = f"invoice_{invoice.id}.pdf"
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    doc = SimpleDocTemplate(filepath, pagesize=letter)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    # --- Header ---
+    elements.append(Paragraph(f"Invoice #{invoice.id}", styles['Title']))
+    elements.append(Paragraph(f"Date: {invoice.created_at.strftime('%Y-%m-%d')}", styles['Normal']))
+    elements.append(Spacer(1, 12))
+
+    # --- Customer Info ---
+    elements.append(Paragraph(f"<b>Customer:</b> {customer.name}", styles['Normal']))
+    if customer.email:
+        elements.append(Paragraph(f"<b>Email:</b> {customer.email}", styles['Normal']))
+    if customer.phone:
+        elements.append(Paragraph(f"<b>Phone:</b> {customer.phone}", styles['Normal']))
+    elements.append(Spacer(1, 12))
+
+    # --- Invoice Items ---
+    data = [["Description", "Quantity", "Price", "Subtotal"]]
+    for item in invoice.items:
+        data.append([
+            item.description,
+            str(item.quantity),
+            f"${item.price:.2f}",
+            f"${item.subtotal():.2f}"
+        ])
+    data.append(["", "", "Total", f"${invoice.total:.2f}"])
+
+    table = Table(data, colWidths=[200, 80, 80, 80])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.grey),
+        ('TEXTCOLOR',(0,0),(-1,0),colors.whitesmoke),
+        ('ALIGN',(1,1),(-1,-1),'CENTER'),
+        ('GRID', (0,0), (-1,-1), 1, colors.black),
+        ('BACKGROUND',(0,1),(-1,-1),colors.beige),
+    ]))
+    elements.append(table)
+
+    # --- Build PDF ---
+    doc.build(elements)
+
+    return send_file(filepath, as_attachment=True)
 
 # ------------------ Settings (Job Types) ------------------
 
