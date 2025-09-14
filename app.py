@@ -10,7 +10,7 @@ import os
 import csv
 
 # --- Config ---
-APP_VERSION = "v0.4.20-dev"  # update manually when you push changes
+APP_VERSION = "v0.5.0-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -840,6 +840,19 @@ def edit_jobtype(type_id):
         flash("Job type updated!", "success")
         return redirect(url_for("jobtypes"))
     return render_template("edit_jobtype.html", jobtype=jt)
+
+# -------------------Backup ---------------------
+
+@app.route("/settings/backup", methods=["POST"])
+def backup_database():
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_filename = f"backup_{timestamp}.db"
+    backup_path = os.path.join(app.root_path, "backups", backup_filename)
+
+    os.makedirs(os.path.dirname(backup_path), exist_ok=True)
+    shutil.copy("business.db", backup_path)
+
+    return send_file(backup_path, as_attachment=True)
 
 # ------------------ Run ------------------
 @app.context_processor
