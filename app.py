@@ -91,8 +91,8 @@ class JobType(db.Model):
     base_price = db.Column(db.Float, default=0.0)   #  add this
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-   # def __repr__(self):
-   #     return f"<JobType {self.name} - ${self.base_price:.2f}>"
+    def __repr__(self):
+        return f"<JobType {self.name} - ${self.base_price:.2f}>"
 
 class Invoice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
