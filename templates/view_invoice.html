@@ -3,23 +3,22 @@
 <div class="container mt-4">
   <h1 class="mb-4">Invoice #{{ invoice.id }}</h1>
 
-  <!-- Customer Info -->
-  <div class="card mb-3">
+    <!-- Customer Info -->
+    <div class="card mb-3">
     <div class="card-header">Customer Information</div>
     <div class="card-body">
-      <p><strong>Name:</strong> {{ invoice.customer_obj.name }}</p>
-      {% if invoice.customer_obj.email %}
-      <p><strong>Email:</strong> {{ invoice.customer_obj.email }}</p>
-      {% endif %}
-      {% if invoice.customer_obj.phone %}
-      <p><strong>Phone:</strong> {{ invoice.customer_obj.phone }}</p>
-      {% endif %}
-      {% if invoice.customer_obj.address %}
-      <p><strong>Address:</strong> {{ invoice.customer_obj.address }}</p>
-      {% endif %}
+        <p><strong>Name:</strong> {{ invoice.customer.name }}</p>
+        {% if invoice.customer.email %}
+        <p><strong>Email:</strong> {{ invoice.customer.email }}</p>
+        {% endif %}
+        {% if invoice.customer.phone %}
+        <p><strong>Phone:</strong> {{ invoice.customer.phone }}</p>
+        {% endif %}
+        {% if invoice.customer.address %}
+        <p><strong>Address:</strong> {{ invoice.customer.address }}</p>
+        {% endif %}
     </div>
-  </div>
-
+    </div>
   <!-- Invoice Items -->
   <div class="table-responsive mb-3">
     <table class="table table-striped align-middle">
@@ -62,7 +61,7 @@
 
   <!-- Actions -->
   <div class="d-flex gap-2">
-    <a href="{{ url_for('invoices') }}" class="btn btn-secondary">Back to Invoices</a>
+    <a href="{{ url_for('invoices_list') }}" class="btn btn-secondary">Back to Invoices</a>
 
     {% if invoice.status != "Paid" %}
     <!-- Mark as Paid form -->
