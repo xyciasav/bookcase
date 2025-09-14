@@ -7,7 +7,7 @@ import csv
 from flask import Response
 
 # --- Config ---
-APP_VERSION = "v0.4.12-dev"  # update manually when you push changes
+APP_VERSION = "v0.4.13-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -78,7 +78,7 @@ class Customer(db.Model):
     # relationships
     bookings = db.relationship("Booking", backref="customer_obj", lazy=True)
     workorders = db.relationship("WorkOrder", backref="customer_obj", lazy=True)
-    invoices = db.relationship("Invoice", backref="customer_obj", lazy=True)  # keep only here
+    invoices = db.relationship("Invoice", back_populates="customer", lazy=True)
 
     
 class JobType(db.Model):
@@ -93,6 +93,7 @@ class JobType(db.Model):
 class Invoice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customer.id"), nullable=False)
+    customer = db.relationship("Customer", back_populates="invoices")
     booking_id = db.Column(db.Integer, db.ForeignKey("booking.id"), nullable=True)
     total = db.Column(db.Float, default=0.0)
     status = db.Column(db.String(20), default="Draft")
