@@ -5,7 +5,7 @@
 {% if upcoming_order %}
 <div class="alert alert-info mt-3">
   <strong>Upcoming Work Order:</strong>
-  #{{ upcoming_order.id }} - {{ upcoming_order.customer }}
+  #{{ upcoming_order.id }} - {{ upcoming_order.customer.name }}
   (Due: {{ upcoming_order.due_date.strftime('%Y-%m-%d') }})
 </div>
 {% endif %}
