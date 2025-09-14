@@ -15,14 +15,13 @@
     </select>
     </div>
 
-  <div class="mb-3">
-    <label class="form-label">Type</label>
-    <select name="booking_type" class="form-select" required>
-      {% for option in ["Logo","Logo + Branding","Flyer","Birthday Invite","Wedding Invite","Engagement Announcement","Save the Date","Family Portraits","Headshots","Wedding Photography","Wedding Videography"] %}
-      <option value="{{ option }}" {% if booking.booking_type == option %}selected{% endif %}>{{ option }}</option>
-      {% endfor %}
+    <select name="booking_type_id" class="form-control" required>
+    {% for bt in booking_types %}
+        <option value="{{ bt.id }}" {% if booking and booking.booking_type_id == bt.id %}selected{% endif %}>
+        {{ bt.name }}
+        </option>
+    {% endfor %}
     </select>
-  </div>
 
   <div class="mb-3">
     <label class="form-label">Event Date</label>

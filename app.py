@@ -11,7 +11,7 @@ import shutil
 import csv
 
 # --- Config ---
-APP_VERSION = "v0.5.3-dev"  # update manually when you push changes
+APP_VERSION = "v0.5.4-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -70,7 +70,8 @@ class Booking(db.Model):
     customer = db.relationship("Customer", back_populates="bookings")
     workorders = db.relationship("WorkOrder", back_populates="booking", lazy=True)
     invoices = db.relationship("Invoice", back_populates="booking", lazy=True)
-
+    booking_type_id = db.Column(db.Integer, db.ForeignKey("booking_type.id"), nullable=False)
+    booking_type = db.relationship("BookingType", backref="bookings")
     
 class Customer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -122,6 +123,13 @@ class InvoiceItem(db.Model):
     def subtotal(self):
         return self.price * self.quantity
 
+class BookingType(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<BookingType {self.name}>"
 
 # --- Routes ---
 @app.route('/')
@@ -158,6 +166,7 @@ def dashboard():
         .filter(Booking.paid_status != "Paid").scalar()
     paid_bookings = db.session.query(db.func.count(Booking.id))\
         .filter(Booking.paid_status == "Paid").scalar()
+    
 
     # --- Work Orders ---
     total_orders = db.session.query(db.func.count(WorkOrder.id)).scalar()
@@ -494,7 +503,7 @@ def bookings():
 
     all_bookings = query.order_by(Booking.event_date.asc()).all()
     return render_template("bookings.html", bookings=all_bookings, q_status=q_status)
-
+    
 @app.route("/bookings/add", methods=["GET", "POST"])
 def add_booking():
     if request.method == "POST":
@@ -506,7 +515,9 @@ def add_booking():
         expected_income = float(request.form.get("expected_income", 0))
         paid_status = request.form.get("paid_status", "Pending")
         notes = request.form.get("notes")
+        booking_type_id = int(request.form["booking_type_id"])
 
+        
         new_booking = Booking(
             customer_id=customer_id,
             booking_type=booking_type,
@@ -569,7 +580,9 @@ def edit_booking(booking_id):
         booking.expected_income = float(request.form.get("expected_income", 0))
         booking.paid_status = request.form.get("paid_status", "Pending")
         booking.notes = request.form.get("notes")
+        booking_type_id = int(request.form["booking_type_id"])
 
+        
         db.session.commit()
         flash("Booking updated successfully!", "success")
         return redirect(url_for("bookings"))
@@ -846,6 +859,45 @@ def edit_jobtype(type_id):
         flash("Job type updated!", "success")
         return redirect(url_for("jobtypes"))
     return render_template("edit_jobtype.html", jobtype=jt)
+
+
+# --------------------Booking Types --------------
+
+@app.route("/settings/bookingtypes")
+def bookingtypes():
+    types = BookingType.query.order_by(BookingType.name.asc()).all()
+    return render_template("bookingtypes.html", booking_types=types)
+
+@app.route("/settings/bookingtypes/add", methods=["POST"])
+def add_bookingtype():
+    name = request.form.get("name")
+    if name:
+        existing = BookingType.query.filter_by(name=name).first()
+        if not existing:
+            db.session.add(BookingType(name=name))
+            db.session.commit()
+            flash("Booking type added!", "success")
+        else:
+            flash("Booking type already exists!", "warning")
+    return redirect(url_for("bookingtypes"))
+
+@app.route("/settings/bookingtypes/delete/<int:type_id>", methods=["POST"])
+def delete_bookingtype(type_id):
+    btype = BookingType.query.get_or_404(type_id)
+    db.session.delete(btype)
+    db.session.commit()
+    flash("Booking type deleted!", "danger")
+    return redirect(url_for("bookingtypes"))
+
+@app.route("/settings/bookingtypes/edit/<int:type_id>", methods=["GET", "POST"])
+def edit_bookingtype(type_id):
+    bt = BookingType.query.get_or_404(type_id)
+    if request.method == "POST":
+        bt.name = request.form.get("name")
+        db.session.commit()
+        flash("Booking type updated!", "success")
+        return redirect(url_for("bookingtypes"))
+    return render_template("edit_bookingtype.html", bookingtype=bt)
 
 # -------------------Backup ---------------------
 
