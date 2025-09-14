@@ -61,7 +61,7 @@
 
   <!-- Actions -->
   <div class="d-flex gap-2">
-    <a href="{{ url_for('invoices_list') }}" class="btn btn-secondary">Back to Invoices</a>
+    <a href="{{ url_for('invoices') }}" class="btn btn-secondary">Back to Invoices</a>
 
     {% if invoice.status != "Paid" %}
     <!-- Mark as Paid form -->

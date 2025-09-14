@@ -10,7 +10,7 @@ import os
 import csv
 
 # --- Config ---
-APP_VERSION = "v0.4.18-prod"  # update manually when you push changes
+APP_VERSION = "v0.4.20-prod"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -649,7 +649,7 @@ def seed_job_types():
 # -------------------- Invoices -----------------------------
 
 @app.route("/invoices", endpoint="invoices")
-def invoices_list():
+def invoices():
     invoices = Invoice.query.order_by(Invoice.created_at.desc()).all()
     return render_template("invoices.html", invoices=invoices)
 
@@ -690,7 +690,7 @@ def view_invoice(invoice_id):
 @app.route("/invoices/create_from_booking/<int:booking_id>", methods=["POST"])
 def create_invoice_from_booking(booking_id):
     booking = Booking.query.get_or_404(booking_id)
-    customer = booking.customer.name
+    customer = booking.customer
 
     workorder_ids = request.form.getlist("workorders")
     if not workorder_ids:

@@ -97,7 +97,7 @@
       {% for order in workorders %}
       <tr>
         <td>{{ order.id }}</td>
-        <td>{{ order.customer_obj.name if order.customer_obj else "N/A" }}</td>
+        <td>{{ order.customer.name if order.customer else "N/A" }}</td>
         <td>{{ order.order_type }}</td>
         <td>{{ order.priority }}</td>
         <td>{{ order.status }}</td>

@@ -179,7 +179,7 @@
     <ul class="list-group">
       {% for order in recent_orders %}
         <li class="list-group-item">
-          <strong>#{{ order.id }}</strong> - {{ order.customer }} 
+          <strong>#{{ order.id }}</strong> - {{ order.customer.name }} 
           ({{ order.order_type }}, {{ order.priority }}, {{ order.status }})
         </li>
       {% else %}
