@@ -88,7 +88,7 @@ class Customer(db.Model):
 class JobType(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
-    base_price = db.Column(db.Float, default=0.0)   # 🔹 add this
+    base_price = db.Column(db.Float, default=0.0)   #  add this
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
