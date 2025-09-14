@@ -690,7 +690,7 @@ def view_invoice(invoice_id):
 @app.route("/invoices/create_from_booking/<int:booking_id>", methods=["POST"])
 def create_invoice_from_booking(booking_id):
     booking = Booking.query.get_or_404(booking_id)
-    customer = booking.customer_obj
+    customer = booking.customer.name
 
     workorder_ids = request.form.getlist("workorders")
     if not workorder_ids:
