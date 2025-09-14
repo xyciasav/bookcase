@@ -719,11 +719,6 @@ def create_invoice_from_booking(booking_id):
     flash("Invoice created!", "success")
     return redirect(url_for("view_invoice", invoice_id=invoice.id))
 
-@app.route("/invoices")
-def invoices_list():
-    invoices = Invoice.query.order_by(Invoice.created_at.desc()).all()
-    return render_template("invoices.html", invoices=invoices)
-
 @app.route("/invoices/<int:invoice_id>/mark_paid", methods=["POST"])
 def mark_invoice_paid(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
