@@ -6,7 +6,7 @@
   <div class="card mb-4">
     <div class="card-body">
       <h5 class="card-title">{{ booking.booking_type }}</h5>
-      <p><strong>Customer:</strong> {{ booking.customer_obj.name }}</p>
+      <p><strong>Customer:</strong> {{ booking.customer.name }}</p>
       <p><strong>Event Date:</strong> {{ booking.event_date }}</p>
       {% if booking.secondary_date %}
         <p><strong>Secondary Date:</strong> {{ booking.secondary_date }}</p>
