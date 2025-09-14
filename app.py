@@ -399,7 +399,7 @@ def add_workorder():
         priority = request.form.get("priority", "Medium")
         due_date_str = request.form.get("due_date")
         status = request.form.get("status", "New")
-        booking_id = request.form.get("booking_id")  # ✅ NEW
+        booking_id = request.form.get("booking_id")  #  NEW
 
         due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
 
@@ -408,7 +408,7 @@ def add_workorder():
 
         new_order = WorkOrder(
             customer_id=customer_id,
-            booking_id=int(booking_id) if booking_id else None,  # ✅ tie to booking
+            booking_id=int(booking_id) if booking_id else None,  #  tie to booking
             description=description,
             order_type=order_type,
             price=price,
@@ -440,7 +440,7 @@ def add_workorder():
         customers=customers,
         job_types=job_types,
         preselected_customer=preselected_customer,
-        booking_id=booking_id  # ✅ pass along
+        booking_id=booking_id  #  pass along
     )
 
 @app.route("/workorders/edit/<int:workorder_id>", methods=["GET", "POST"])
@@ -461,7 +461,7 @@ def edit_workorder(workorder_id):
         return redirect(url_for("workorders"))
 
     customers = Customer.query.order_by(Customer.name.asc()).all()
-    job_types = JobType.query.order_by(JobType.name.asc()).all()   # ✅ ensure this is passed
+    job_types = JobType.query.order_by(JobType.name.asc()).all()   # ensure this is passed
     return render_template("edit_workorder.html", order=order, customers=customers, job_types=job_types)
 
 @app.route("/workorders/delete/<int:workorder_id>", methods=["POST"])
@@ -697,7 +697,7 @@ def create_invoice_from_booking(booking_id):
         flash("No work orders selected.", "warning")
         return redirect(url_for("view_booking", booking_id=booking.id))
 
-    invoice = Invoice(customer_id=customer.id, booking_id=booking.id, status="Draft")  # 🔹 link booking
+    invoice = Invoice(customer_id=customer.id, booking_id=booking.id, status="Draft")  #  link booking
     db.session.add(invoice)
     db.session.commit()
 
