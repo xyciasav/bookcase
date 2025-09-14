@@ -103,6 +103,7 @@ class Invoice(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     items = db.relationship("InvoiceItem", backref="invoice", lazy=True)
+    customer_obj = db.relationship("Customer", backref="invoices")
 
 class InvoiceItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -400,10 +401,15 @@ def add_workorder():
 
         due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
 
+        # 🔹 Lookup base price from JobType
+        jobtype = JobType.query.filter_by(name=order_type).first()
+        price = jobtype.base_price if jobtype else 0.0
+
         new_order = WorkOrder(
             customer_id=customer_id,
             description=description,
             order_type=order_type,
+            price=price,  # <-- set price here
             priority=priority,
             due_date=due_date,
             status=status
@@ -733,6 +739,14 @@ def mark_invoice_paid(invoice_id):
 
     flash(f"Invoice #{invoice.id} marked as Paid", "success")
     return redirect(url_for("view_invoice", invoice_id=invoice.id))
+
+@app.route("/invoices/delete/<int:invoice_id>", methods=["POST"])
+def delete_invoice(invoice_id):
+    invoice = Invoice.query.get_or_404(invoice_id)
+    db.session.delete(invoice)
+    db.session.commit()
+    flash(f"Invoice #{invoice.id} deleted!", "danger")
+    return redirect(url_for("invoices_list"))
 
 # ------------------ Settings (Job Types) ------------------
 
