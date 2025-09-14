@@ -7,7 +7,7 @@ import csv
 from flask import Response
 
 # --- Config ---
-APP_VERSION = "v0.4.14-dev"  # update manually when you push changes
+APP_VERSION = "v0.4.15-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -396,28 +396,33 @@ def add_workorder():
         priority = request.form.get("priority", "Medium")
         due_date_str = request.form.get("due_date")
         status = request.form.get("status", "New")
+        booking_id = request.form.get("booking_id")  # ✅ NEW
 
         due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
 
-        # 🔹 Lookup base price from JobType
         jobtype = JobType.query.filter_by(name=order_type).first()
         price = jobtype.base_price if jobtype else 0.0
 
         new_order = WorkOrder(
             customer_id=customer_id,
+            booking_id=int(booking_id) if booking_id else None,  # ✅ tie to booking
             description=description,
             order_type=order_type,
-            price=price,  # <-- set price here
+            price=price,
             priority=priority,
             due_date=due_date,
             status=status
         )
         db.session.add(new_order)
         db.session.commit()
+
         flash("Work order added successfully!", "success")
+
+        # redirect back to booking page if created from there
+        if booking_id:
+            return redirect(url_for("view_booking", booking_id=booking_id))
         return redirect(url_for("workorders"))
 
-    # --- If GET request (show form) ---
     booking_id = request.args.get("booking_id")
     preselected_customer = None
     if booking_id:
@@ -431,7 +436,8 @@ def add_workorder():
         "add_workorder.html",
         customers=customers,
         job_types=job_types,
-        preselected_customer=preselected_customer
+        preselected_customer=preselected_customer,
+        booking_id=booking_id  # ✅ pass along
     )
 
 @app.route("/workorders/edit/<int:workorder_id>", methods=["GET", "POST"])

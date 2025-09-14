@@ -90,21 +90,20 @@
     <p><em>No invoices yet for this booking.</em></p>
   {% endif %}
 
-  <!-- Generate Invoice -->
-  {% if booking.workorders and booking.workorders|length > 0 %}
-    <form action="{{ url_for('create_invoice_from_booking', booking_id=booking.id) }}" method="post">
-      <h5>Select Work Orders to Include:</h5>
-      {% for order in booking.workorders %}
-        <div class="form-check">
-          <input class="form-check-input" type="checkbox" name="workorders" value="{{ order.id }}" id="wo{{ order.id }}">
-          <label class="form-check-label" for="wo{{ order.id }}">
-            {{ order.order_type }} — ${{ "%.2f"|format(order.price or 0.0) }}
-          </label>
-        </div>
-      {% endfor %}
-      <button type="submit" class="btn btn-success mt-2">➕ Generate Invoice</button>
-    </form>
-  {% endif %}
+{% if booking.workorders and booking.workorders|length > 0 %}
+  <form action="{{ url_for('create_invoice_from_booking', booking_id=booking.id) }}" method="post">
+    <h5>Select Work Orders to Include:</h5>
+    {% for order in booking.workorders %}
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="workorders" value="{{ order.id }}" id="wo{{ order.id }}">
+        <label class="form-check-label" for="wo{{ order.id }}">
+          {{ order.order_type }} — ${{ "%.2f"|format(order.price or 0.0) }}
+        </label>
+      </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-success mt-2">➕ Generate Invoice</button>
+  </form>
+{% endif %}
 
   <a href="{{ url_for('bookings') }}" class="btn btn-secondary mt-4">← Back to Bookings</a>
 </div>
