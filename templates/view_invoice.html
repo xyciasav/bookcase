@@ -5,9 +5,7 @@
 
   <!-- Customer Info -->
   <div class="card mb-3">
-    <div class="card-header">
-      Customer Information
-    </div>
+    <div class="card-header">Customer Information</div>
     <div class="card-body">
       <p><strong>Name:</strong> {{ invoice.customer_obj.name }}</p>
       {% if invoice.customer_obj.email %}
@@ -52,10 +50,10 @@
     </table>
   </div>
 
-<a href="{{ url_for('invoice_pdf', invoice_id=invoice.id) }}" class="btn btn-info">
-  🖨 Download PDF
-</a>
-
+  <!-- Download PDF -->
+  <a href="{{ url_for('invoice_pdf', invoice_id=invoice.id) }}" class="btn btn-info mb-3">
+    🖨 Download PDF
+  </a>
 
   <!-- Invoice Status -->
   <div class="mb-3">
@@ -65,39 +63,39 @@
   <!-- Actions -->
   <div class="d-flex gap-2">
     <a href="{{ url_for('invoices') }}" class="btn btn-secondary">Back to Invoices</a>
+
     {% if invoice.status != "Paid" %}
-    <form action="{{ url_for('mark_invoice_paid', invoice_id=invoice.id) }}" method="post">
+    <!-- Mark as Paid form -->
+    <form action="{{ url_for('mark_invoice_paid', invoice_id=invoice.id) }}" method="post" style="display:inline;">
       <button type="submit" class="btn btn-success">Mark as Paid</button>
-
-
-  <!-- Delete button -->
-<button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteInvoice{{ invoice.id }}">
-  Delete
-</button>
-
-<!-- Modal -->
-<div class="modal fade" id="deleteInvoice{{ invoice.id }}" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title">Confirm Delete</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        Are you sure you want to delete Invoice #{{ invoice.id }}?
-      </div>
-      <div class="modal-footer">
-        <form method="post" action="{{ url_for('delete_invoice', invoice_id=invoice.id) }}">
-          <button type="submit" class="btn btn-danger">Yes, Delete</button>
-        </form>
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-      </div>
-    </div>
-  </div>
-</div>
-    
     </form>
     {% endif %}
+
+    <!-- Delete button (modal trigger) -->
+    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteInvoice{{ invoice.id }}">
+      Delete
+    </button>
+  </div>
+
+  <!-- Delete Modal -->
+  <div class="modal fade" id="deleteInvoice{{ invoice.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">Confirm Delete</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to delete Invoice #{{ invoice.id }}?
+        </div>
+        <div class="modal-footer">
+          <form method="post" action="{{ url_for('delete_invoice', invoice_id=invoice.id) }}">
+            <button type="submit" class="btn btn-danger">Yes, Delete</button>
+          </form>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
