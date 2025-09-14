@@ -24,7 +24,7 @@
       {% for booking in bookings %}
       <tr>
         <td>{{ booking.id }}</td>
-        <td>{{ booking.customer_obj.name if booking.customer_obj else '' }}</td>
+        <td>{{ booking.customer.name if booking.customer.name else '' }}</td>
         <td>{{ booking.booking_type }}</td>
         <td>{{ booking.event_date.strftime('%Y-%m-%d') if booking.event_date else '' }}</td>
         <td>${{ '%.2f'|format(booking.expected_income) }}</td>
@@ -50,7 +50,7 @@
                 </div>
                 <div class="modal-body">
                   Are you sure you want to delete this booking?<br>
-                  <strong>{{ booking.customer_obj.name if booking.customer_obj else '' }}</strong> - 
+                  <strong>{{ booking.customer.name if booking.customer else '' }}</strong> - 
                   {{ booking.booking_type }} on 
                   {{ booking.event_date.strftime('%Y-%m-%d') if booking.event_date else 'N/A' }}
                 </div>
