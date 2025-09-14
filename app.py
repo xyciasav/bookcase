@@ -754,7 +754,7 @@ def delete_invoice(invoice_id):
     db.session.delete(invoice)
     db.session.commit()
     flash(f"Invoice #{invoice.id} deleted!", "danger")
-    return redirect(url_for("invoices_list"))
+    return redirect(url_for("invoices"))
 
 @app.route("/invoices/<int:invoice_id>/pdf")
 def invoice_pdf(invoice_id):
