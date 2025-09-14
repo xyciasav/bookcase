@@ -64,7 +64,7 @@ class Booking(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     workorders = db.relationship("WorkOrder", backref="booking_obj", lazy=True)
-    invoices = db.relationship("Invoice", back_populates="booking", lazy=True)  # 🔹 FIXED
+    invoices = db.relationship("Invoice", back_populates="booking", lazy=True)   # ✅ FIXED
     
 class Customer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -93,14 +93,14 @@ class JobType(db.Model):
 class Invoice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customer.id"), nullable=False)
-    booking_id = db.Column(db.Integer, db.ForeignKey("booking.id"), nullable=True)  
+    booking_id = db.Column(db.Integer, db.ForeignKey("booking.id"), nullable=True)
     total = db.Column(db.Float, default=0.0)
     status = db.Column(db.String(20), default="Draft")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     items = db.relationship("InvoiceItem", backref="invoice", lazy=True)
     customer_obj = db.relationship("Customer", backref="all_invoices")
-    booking = db.relationship("Booking", back_populates="invoices")  # 🔹 FIXED
+    booking = db.relationship("Booking", back_populates="invoices")   # ✅ FIXED
 
 class InvoiceItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
