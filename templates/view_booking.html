@@ -19,65 +19,52 @@
     </div>
   </div>
 
-<!-- Work Orders tied to this booking -->
 <h3>Work Orders</h3>
 {% if booking.workorders %}
   <ul class="list-group mb-3">
     {% for order in booking.workorders %}
       <li class="list-group-item">
-        <strong>{{ order.order_type }}</strong> — {{ order.status }}
-        {% if order.due_date %}(Due: {{ order.due_date }}){% endif %}
-        <span class="float-end">
-          <a href="{{ url_for('edit_workorder', workorder_id=order.id) }}" class="btn btn-sm btn-secondary">Edit</a>
-        </span>
+        <strong>{{ order.order_type }}</strong> — ${{ "%.2f"|format(order.price or 0.0) }} ({{ order.status }})
       </li>
     {% endfor %}
   </ul>
 {% else %}
-  <p><em>No work orders yet.</em></p>
+  <p><em>No work orders yet for this booking.</em></p>
 {% endif %}
 
-<!-- Invoices tied to this booking -->
-<h3>Invoices</h3>
-{% if booking.customer_obj.invoices %}
-  <ul class="list-group mb-3">
-    {% for inv in booking.customer_obj.invoices %}
-      <li class="list-group-item">
-        Invoice #{{ inv.id }} — ${{ '%.2f'|format(inv.total or 0.0) }} ({{ inv.status }})
-        <span class="float-end">
-          <a href="{{ url_for('view_invoice', invoice_id=inv.id) }}" class="btn btn-sm btn-info">View</a>
-          <!-- Delete modal -->
-          <button type="button" class="btn btn-sm btn-danger" 
-                  data-bs-toggle="modal" data-bs-target="#deleteInvoice{{ inv.id }}">
-            Delete
-          </button>
-        </span>
-      </li>
+<!-- Create work order -->
+<a href="{{ url_for('add_workorder', booking_id=booking.id) }}" class="btn btn-primary">
+  ➕ Create Work Order for this Booking
+</a>
 
-      <!-- Modal -->
-      <div class="modal fade" id="deleteInvoice{{ inv.id }}" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-              <h5 class="modal-title">Confirm Delete</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-              Are you sure you want to delete invoice <strong>#{{ inv.id }}</strong>?
-            </div>
-            <div class="modal-footer">
-              <form method="post" action="{{ url_for('delete_invoice', invoice_id=inv.id) }}">
-                <button type="submit" class="btn btn-danger">Yes, Delete</button>
-              </form>
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            </div>
-          </div>
-        </div>
-      </div>
+<hr>
+
+<h3>Invoices</h3>
+{% if booking.invoices %}
+  <ul class="list-group mb-3">
+    {% for inv in booking.invoices %}
+      <li class="list-group-item">
+        Invoice #{{ inv.id }} — ${{ "%.2f"|format(inv.total or 0.0) }} ({{ inv.status }})
+        <a href="{{ url_for('view_invoice', invoice_id=inv.id) }}" class="btn btn-sm btn-info">View</a>
+      </li>
     {% endfor %}
   </ul>
 {% else %}
   <p><em>No invoices yet for this booking.</em></p>
+{% endif %}
+
+{% if booking.workorders %}
+<form action="{{ url_for('create_invoice_from_booking', booking_id=booking.id) }}" method="post">
+  {% for wo in booking.workorders %}
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" name="workorders" value="{{ wo.id }}" id="wo{{ wo.id }}">
+      <label class="form-check-label" for="wo{{ wo.id }}">
+        {{ wo.order_type }} (${{ "%.2f"|format(wo.price or 0.0) }})
+      </label>
+    </div>
+  {% endfor %}
+  <button type="submit" class="btn btn-success btn-sm mt-2">Generate Invoice</button>
+</form>
 {% endif %}
 </div>
 {% endblock %}

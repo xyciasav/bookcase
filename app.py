@@ -59,15 +59,12 @@ class Booking(db.Model):
     event_date = db.Column(db.Date, nullable=False)
     secondary_date = db.Column(db.Date, nullable=True)
     expected_income = db.Column(db.Float, nullable=False, default=0.0)
-    paid_status = db.Column(db.String(10), default="Pending")  # Paid | Pending | Partial
+    paid_status = db.Column(db.String(10), default="Pending")
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # 🔹 relationship to WorkOrders
     workorders = db.relationship("WorkOrder", backref="booking_obj", lazy=True)
-
-    def __repr__(self):
-        return f"<Booking {self.id}: {self.customer_obj.name if self.customer_obj else self.customer_id} - {self.booking_type}>"
+    invoices = db.relationship("Invoice", backref="booking_obj", lazy=True)  # 🔹 NEW
     
 class Customer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -96,11 +93,14 @@ class JobType(db.Model):
 class Invoice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customer.id"), nullable=False)
+    booking_id = db.Column(db.Integer, db.ForeignKey("booking.id"), nullable=True)  # 🔹 link to booking
     total = db.Column(db.Float, default=0.0)
     status = db.Column(db.String(20), default="Draft")  # Draft | Sent | Paid
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     items = db.relationship("InvoiceItem", backref="invoice", lazy=True)
+    customer_obj = db.relationship("Customer", backref="all_invoices")
+    booking_obj = db.relationship("Booking", backref="invoices")  # 🔹 each booking can have many invoices
 
 class InvoiceItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -687,7 +687,7 @@ def create_invoice_from_booking(booking_id):
         flash("No work orders selected.", "warning")
         return redirect(url_for("view_booking", booking_id=booking.id))
 
-    invoice = Invoice(customer_id=customer.id, status="Draft")
+    invoice = Invoice(customer_id=customer.id, booking_id=booking.id, status="Draft")  # 🔹 link booking
     db.session.add(invoice)
     db.session.commit()
 
