@@ -45,15 +45,15 @@ class WorkOrder(db.Model):
     booking_id = db.Column(db.Integer, db.ForeignKey("booking.id"), nullable=True)
     description = db.Column(db.Text, nullable=True)
     order_type = db.Column(db.String(50), nullable=False)
-    price = db.Column(db.Float, default=0.0)   # 🔹 NEW
+    price = db.Column(db.Float, default=0.0)
     due_date = db.Column(db.Date, nullable=True)
     status = db.Column(db.String(20), default="New")
     file_path = db.Column(db.String(300), nullable=True)
     priority = db.Column(db.String(20), default="Medium")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    def __repr__(self):
-        return f"<WorkOrder {self.id}: {self.order_type} ({self.priority})>"
+    customer = db.relationship("Customer", back_populates="workorders")
+    booking = db.relationship("Booking", back_populates="workorders")
     
 class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -66,8 +66,10 @@ class Booking(db.Model):
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    workorders = db.relationship("WorkOrder", backref="booking_obj", lazy=True)
-    invoices = db.relationship("Invoice", back_populates="booking", lazy=True)   # ✅ FIXED
+    customer = db.relationship("Customer", back_populates="bookings")
+    workorders = db.relationship("WorkOrder", back_populates="booking", lazy=True)
+    invoices = db.relationship("Invoice", back_populates="booking", lazy=True)
+
     
 class Customer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -78,9 +80,8 @@ class Customer(db.Model):
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # relationships
-    bookings = db.relationship("Booking", backref="customer_obj", lazy=True)
-    workorders = db.relationship("WorkOrder", backref="customer_obj", lazy=True)
+    bookings = db.relationship("Booking", back_populates="customer", lazy=True)
+    workorders = db.relationship("WorkOrder", back_populates="customer", lazy=True)
     invoices = db.relationship("Invoice", back_populates="customer", lazy=True)
 
     
@@ -96,14 +97,14 @@ class JobType(db.Model):
 class Invoice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customer.id"), nullable=False)
-    customer = db.relationship("Customer", back_populates="invoices")  # ✅ keep this one
     booking_id = db.Column(db.Integer, db.ForeignKey("booking.id"), nullable=True)
     total = db.Column(db.Float, default=0.0)
     status = db.Column(db.String(20), default="Draft")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    customer = db.relationship("Customer", back_populates="invoices")
+    booking = db.relationship("Booking", back_populates="invoices")
     items = db.relationship("InvoiceItem", backref="invoice", lazy=True)
-    booking = db.relationship("Booking", back_populates="invoices")   # ✅ booking link
 
 class InvoiceItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
