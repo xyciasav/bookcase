@@ -18,7 +18,7 @@
       {% for inv in invoices %}
       <tr>
         <td>#{{ inv.id }}</td>
-        <td>{{ inv.customer_obj.name }}</td>
+        <td>{{ inv.customer.name }}</td>
         <td>${{ '%.2f'|format(inv.total or 0.0) }}</td>
         <td>{{ inv.status }}</td>
         <td>{{ inv.created_at.strftime('%Y-%m-%d') }}</td>
