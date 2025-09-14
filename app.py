@@ -360,9 +360,9 @@ def workorders():
         query = query.filter(WorkOrder.status == q_status)
     if q_text:
         like = f"%{q_text}%"
-        query = query.filter(
+        query = query.join(Customer).filter(
             db.or_(
-                WorkOrder.customer.ilike(like),
+                Customer.name.ilike(like),
                 WorkOrder.description.ilike(like)
             )
         )
