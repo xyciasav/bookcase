@@ -847,13 +847,19 @@ def edit_jobtype(type_id):
 @app.route("/settings/backup", methods=["POST"])
 def backup_database():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_dir = os.path.join(app.root_path, "backups")
+    os.makedirs(backup_dir, exist_ok=True)
+
+    # Path to SQLite file inside Flask's instance folder
+    db_path = os.path.join(app.instance_path, "business.db")
+
     backup_filename = f"backup_{timestamp}.db"
-    backup_path = os.path.join(app.root_path, "backups", backup_filename)
+    backup_path = os.path.join(backup_dir, backup_filename)
 
-    os.makedirs(os.path.dirname(backup_path), exist_ok=True)
-    shutil.copy("/home/plex/bookcase/instance/business.db", backup_path)
+    shutil.copy(db_path, backup_path)
 
-    return send_file(backup_path, as_attachment=True)
+    flash(f"Database backup created: {backup_filename}", "success")
+    return redirect(url_for("jobtypes"))  # back to settings
 
 # ------------------ Run ------------------
 @app.context_processor
