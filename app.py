@@ -98,15 +98,14 @@ class JobType(db.Model):
 class Invoice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customer.id"), nullable=False)
-    customer = db.relationship("Customer", back_populates="invoices")
+    customer = db.relationship("Customer", back_populates="invoices")  # ✅ keep this one
     booking_id = db.Column(db.Integer, db.ForeignKey("booking.id"), nullable=True)
     total = db.Column(db.Float, default=0.0)
     status = db.Column(db.String(20), default="Draft")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     items = db.relationship("InvoiceItem", backref="invoice", lazy=True)
-    customer_obj = db.relationship("Customer", backref="all_invoices")
-    booking = db.relationship("Booking", back_populates="invoices")   # ✅ FIXED
+    booking = db.relationship("Booking", back_populates="invoices")   # ✅ booking link
 
 class InvoiceItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -737,7 +736,7 @@ def mark_invoice_paid(invoice_id):
     txn = Transaction(
         type="Income",
         category="Invoice",
-        party=invoice.customer_obj.name,
+        party=invoice.customer.name,
         description=f"Invoice #{invoice.id}",
         amount=invoice.total,
         status="Paid",
@@ -760,7 +759,7 @@ def delete_invoice(invoice_id):
 @app.route("/invoices/<int:invoice_id>/pdf")
 def invoice_pdf(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
-    customer = invoice.customer_obj
+    customer = invoice.customer
 
     filename = f"invoice_{invoice.id}.pdf"
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
