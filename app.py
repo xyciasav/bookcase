@@ -851,7 +851,7 @@ def backup_database():
     backup_path = os.path.join(app.root_path, "backups", backup_filename)
 
     os.makedirs(os.path.dirname(backup_path), exist_ok=True)
-    shutil.copy("business.db", backup_path)
+    shutil.copy("/home/plex/bookcase/instance/business.db", backup_path)
 
     return send_file(backup_path, as_attachment=True)
 
