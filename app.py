@@ -81,10 +81,8 @@ class Customer(db.Model):
     # relationships
     bookings = db.relationship("Booking", backref="customer_obj", lazy=True)
     workorders = db.relationship("WorkOrder", backref="customer_obj", lazy=True)
-    invoices = db.relationship("Invoice", backref="customer_obj", lazy=True)  # 🔹 NEW
+    invoices = db.relationship("Invoice", backref="customer_obj", lazy=True)  # keep only here
 
-    def __repr__(self):
-        return f"<Customer {self.name}>"
     
 class JobType(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -103,7 +101,6 @@ class Invoice(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     items = db.relationship("InvoiceItem", backref="invoice", lazy=True)
-    customer_obj = db.relationship("Customer", backref="invoices")
 
 class InvoiceItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
