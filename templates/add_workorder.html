@@ -2,21 +2,27 @@
 {% block content %}
 <h1 class="mb-4">Add Work Order</h1>
 
+<input type="hidden" name="booking_id" value="{{ booking_id }}">
+
 <form method="post" enctype="multipart/form-data" class="row g-3">
-  <div class="col-md-6">
-    <label class="form-label">Customer</label>
-    <input type="text" name="customer" class="form-control" required>
+    <div class="mb-3">
+    <label for="customer_id" class="form-label">Customer</label>
+    <select class="form-select" id="customer_id" name="customer_id" required>
+      <option value="">Select a customer...</option>
+      {% for c in customers %}
+        <option value="{{ c.id }}" {% if preselected_customer == c.id %}selected{% endif %}>
+          {{ c.name }}
+        </option>
+      {% endfor %}
+    </select>
   </div>
-  <div class="col-md-6">
+    <div class="col-md-6">
     <label class="form-label">Type</label>
     <select name="order_type" class="form-select" required>
-      <option value="Logo">Logo</option>
-      <option value="Logo + Branding">Logo + Branding</option>
-      <option value="Flyer">Flyer</option>
-      <option value="Birthday Invite">Birthday Invite</option>
-      <option value="Wedding Invite">Wedding Invite</option>
-      <option value="Engagement Announcement">Engagement Announcement</option>
-      <option value="Save the Date">Save the Date</option>
+      <option value="">Select a type...</option>
+      {% for t in job_types %}
+        <option value="{{ t.name }}">{{ t.name }}</option>
+      {% endfor %}
     </select>
   </div>
   <div class="col-md-6">
@@ -50,6 +56,10 @@
   <div class="col-12">
     <button type="submit" class="btn btn-primary">Save</button>
     <a href="{{ url_for('workorders') }}" class="btn btn-secondary">Cancel</a>
+      
+  {% if request.args.get('booking_id') %}
+  <input type="hidden" name="booking_id" value="{{ request.args.get('booking_id') }}">
+{% endif %}
   </div>
 </form>
 {% endblock %}

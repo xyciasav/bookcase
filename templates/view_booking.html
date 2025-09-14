@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Booking Details</h2>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">{{ booking.booking_type }}</h5>
+      <p><strong>Customer:</strong> {{ booking.customer_obj.name }}</p>
+      <p><strong>Event Date:</strong> {{ booking.event_date }}</p>
+      {% if booking.secondary_date %}
+        <p><strong>Secondary Date:</strong> {{ booking.secondary_date }}</p>
+      {% endif %}
+      <p><strong>Expected Income:</strong> ${{ "%.2f"|format(booking.expected_income) }}</p>
+      <p><strong>Status:</strong> {{ booking.paid_status }}</p>
+      {% if booking.notes %}
+        <p><strong>Notes:</strong> {{ booking.notes }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Work Orders -->
+  <h3>Work Orders</h3>
+  {% if booking.workorders and booking.workorders|length > 0 %}
+    <ul class="list-group mb-3">
+      {% for order in booking.workorders %}
+        <li class="list-group-item">
+          <strong>{{ order.order_type }}</strong> — {{ order.status }}
+          {% if order.due_date %}
+            (Due: {{ order.due_date }})
+          {% endif %}
+          <span class="float-end">
+            ${{ "%.2f"|format(order.price or 0.0) }}
+            <a href="{{ url_for('edit_workorder', workorder_id=order.id) }}" class="btn btn-sm btn-secondary ms-2">Edit</a>
+          </span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p><em>No work orders yet for this booking.</em></p>
+  {% endif %}
+
+  <a href="{{ url_for('add_workorder', booking_id=booking.id) }}" class="btn btn-primary mb-4">
+    ➕ Create Work Order for this Booking
+  </a>
+
+  <!-- Invoices -->
+  <h3>Invoices</h3>
+  {% if booking.invoices and booking.invoices|length > 0 %}
+    <ul class="list-group mb-3">
+      {% for inv in booking.invoices %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <span>
+            <strong>Invoice #{{ inv.id }}</strong> — {{ inv.status }}
+            (Total: ${{ "%.2f"|format(inv.total or 0.0) }})
+          </span>
+          <span>
+            <a href="{{ url_for('view_invoice', invoice_id=inv.id) }}" class="btn btn-sm btn-primary">View</a>
+            <!-- Delete modal trigger -->
+            <button type="button" class="btn btn-danger btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#deleteInvoice{{ inv.id }}">
+              Delete
+            </button>
+          </span>
+        </li>
+
+        <!-- Delete Modal -->
+        <div class="modal fade" id="deleteInvoice{{ inv.id }}" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                Are you sure you want to delete invoice #{{ inv.id }}?
+              </div>
+              <div class="modal-footer">
+                <form method="post" action="{{ url_for('delete_invoice', invoice_id=inv.id) }}">
+                  <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                </form>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p><em>No invoices yet for this booking.</em></p>
+  {% endif %}
+
+{% if booking.workorders and booking.workorders|length > 0 %}
+  <form action="{{ url_for('create_invoice_from_booking', booking_id=booking.id) }}" method="post">
+    <h5>Select Work Orders to Include:</h5>
+    {% for order in booking.workorders %}
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="workorders" value="{{ order.id }}" id="wo{{ order.id }}">
+        <label class="form-check-label" for="wo{{ order.id }}">
+          {{ order.order_type }} — ${{ "%.2f"|format(order.price or 0.0) }}
+        </label>
+      </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-success mt-2">➕ Generate Invoice</button>
+  </form>
+{% endif %}
+
+  <a href="{{ url_for('bookings') }}" class="btn btn-secondary mt-4">← Back to Bookings</a>
+</div>
+{% endblock %}

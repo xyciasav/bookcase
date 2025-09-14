@@ -25,7 +25,10 @@
   </div>
 </form>
 
-<a href="{{ url_for('add_transaction') }}" class="btn btn-success mb-3">+ Add Transaction</a>
+<a href="{{ url_for('add_transaction') }}" class="btn btn-success mb-3">+ Add Transaction</a> <a href="{{ url_for('export_transactions') }}?type={{ q_type }}&status={{ q_status }}&q={{ q_text }}"
+   class="btn btn-outline-secondary mb-3">
+  Export CSV
+</a>
 
 <div class="table-responsive">
   <table class="table table-striped align-middle">

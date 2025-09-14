@@ -97,7 +97,7 @@
       {% for order in workorders %}
       <tr>
         <td>{{ order.id }}</td>
-        <td>{{ order.customer }}</td>
+        <td>{{ order.customer_obj.name if order.customer_obj else "N/A" }}</td>
         <td>{{ order.order_type }}</td>
         <td>{{ order.priority }}</td>
         <td>{{ order.status }}</td>
@@ -108,7 +108,15 @@
           {% endif %}
         </td>
         <td>
-          <a href="{{ url_for('edit_workorder', workorder_id=order.id) }}" class="btn btn-warning btn-sm">Edit</a>
+          <!-- Open button triggers modal -->
+          <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#orderModal{{ order.id }}">
+            Open
+          </button>
+
+          <!-- Edit button -->
+          <a href="{{ url_for('edit_workorder', workorder_id=order.id) }}" class="btn btn-warning btn-sm">
+            Edit
+          </a>
 
           <!-- Delete button triggers modal -->
           <button type="button" class="btn btn-danger btn-sm" 
@@ -116,7 +124,35 @@
             Delete
           </button>
 
-          <!-- Modal -->
+          <!-- Details Modal -->
+          <div class="modal fade" id="orderModal{{ order.id }}" tabindex="-1" aria-labelledby="orderModalLabel{{ order.id }}" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="orderModalLabel{{ order.id }}">
+                    Work Order #{{ order.id }} - {{ order.customer }}
+                  </h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <p><strong>Customer:</strong> {{ order.customer }}</p>
+                  <p><strong>Type:</strong> {{ order.order_type }}</p>
+                  <p><strong>Status:</strong> {{ order.status }}</p>
+                  <p><strong>Priority:</strong> {{ order.priority }}</p>
+                  <p><strong>Due Date:</strong> {{ order.due_date.strftime('%Y-%m-%d') if order.due_date else 'N/A' }}</p>
+                  <p><strong>Description:</strong> {{ order.description or "No description provided" }}</p>
+                  {% if order.file_path %}
+                    <p><strong>File:</strong> <a href="{{ '/' + order.file_path }}" target="_blank">View</a></p>
+                  {% endif %}
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Delete Confirmation Modal -->
           <div class="modal fade" id="confirmDeleteModal{{ order.id }}" tabindex="-1" aria-labelledby="confirmDeleteLabel{{ order.id }}" aria-hidden="true">
             <div class="modal-dialog">
               <div class="modal-content">

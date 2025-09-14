@@ -13,25 +13,26 @@
         <th>ID</th>
         <th>Customer</th>
         <th>Type</th>
-        <th>Date</th>
+        <th>Event Date</th>
         <th>Expected Income</th>
         <th>Status</th>
         <th>Notes</th>
-        <th></th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody>
       {% for booking in bookings %}
       <tr>
         <td>{{ booking.id }}</td>
-        <td>{{ booking.customer }}</td>
+        <td>{{ booking.customer_obj.name if booking.customer_obj else '' }}</td>
         <td>{{ booking.booking_type }}</td>
-        <td>{{ booking.date.strftime('%Y-%m-%d') if booking.date else '' }}</td>
+        <td>{{ booking.event_date.strftime('%Y-%m-%d') if booking.event_date else '' }}</td>
         <td>${{ '%.2f'|format(booking.expected_income) }}</td>
-        <td>{{ booking.status }}</td>
+        <td>{{ booking.paid_status }}</td>
         <td>{{ booking.notes or '' }}</td>
         <td>
           <a href="{{ url_for('edit_booking', booking_id=booking.id) }}" class="btn btn-warning btn-sm">Edit</a>
+          <a href="{{ url_for('view_booking', booking_id=booking.id) }}" class="btn btn-info btn-sm">View</a>
 
           <!-- Delete button triggers modal -->
           <button type="button" class="btn btn-danger btn-sm"
@@ -49,7 +50,9 @@
                 </div>
                 <div class="modal-body">
                   Are you sure you want to delete this booking?<br>
-                  <strong>{{ booking.customer }}</strong> - {{ booking.booking_type }} on {{ booking.date.strftime('%Y-%m-%d') if booking.date else 'N/A' }}
+                  <strong>{{ booking.customer_obj.name if booking.customer_obj else '' }}</strong> - 
+                  {{ booking.booking_type }} on 
+                  {{ booking.event_date.strftime('%Y-%m-%d') if booking.event_date else 'N/A' }}
                 </div>
                 <div class="modal-footer">
                   <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

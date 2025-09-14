@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="mb-4">Job Types</h1>
+
+<!-- Add new -->
+<form method="post" action="{{ url_for('add_jobtype') }}" class="row g-3 mb-4">
+  <div class="col-md-5">
+    <input type="text" name="name" class="form-control" placeholder="New job type" required>
+  </div>
+  <div class="col-md-3">
+    <input type="number" step="0.01" name="price" class="form-control" placeholder="Base price" required>
+  </div>
+  <div class="col-md-2">
+    <button type="submit" class="btn btn-success w-100">+ Add</button>
+  </div>
+</form>
+
+<!-- List existing -->
+<div class="table-responsive">
+  <table class="table table-striped align-middle">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Base Price</th>
+        <th style="width: 120px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for jt in job_types %}
+      <tr>
+        <td>{{ jt.name }}</td>
+        <td>${{ '%.2f'|format(jt.base_price or 0.0) }}</td>
+
+        
+            <td>
+      <!-- Edit button -->
+      <a href="{{ url_for('edit_jobtype', type_id=jt.id) }}" class="btn btn-warning btn-sm">Edit</a>
+
+      <!-- Delete button with modal -->
+      <button type="button" class="btn btn-danger btn-sm"
+              data-bs-toggle="modal" data-bs-target="#deleteJobType{{ jt.id }}">
+        Delete
+      </button>
+
+      <!-- Modal -->
+      <div class="modal fade" id="deleteJobType{{ jt.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+              <h5 class="modal-title">Confirm Delete</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              Are you sure you want to delete job type <strong>{{ jt.name }}</strong>?
+            </div>
+            <div class="modal-footer">
+              <form method="post" action="{{ url_for('delete_jobtype', type_id=jt.id) }}">
+                <button type="submit" class="btn btn-danger">Yes, Delete</button>
+              </form>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<a href="{{ url_for('dashboard') }}" class="btn btn-secondary">← Back</a>
+{% endblock %}

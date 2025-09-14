@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="mb-4">Invoices</h1>
+
+<div class="table-responsive">
+  <table class="table table-striped align-middle">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Customer</th>
+        <th>Total</th>
+        <th>Status</th>
+        <th>Created</th>
+        <th style="width: 180px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for inv in invoices %}
+      <tr>
+        <td>#{{ inv.id }}</td>
+        <td>{{ inv.customer_obj.name }}</td>
+        <td>${{ '%.2f'|format(inv.total or 0.0) }}</td>
+        <td>{{ inv.status }}</td>
+        <td>{{ inv.created_at.strftime('%Y-%m-%d') }}</td>
+        <td>
+          <a href="{{ url_for('view_invoice', invoice_id=inv.id) }}" class="btn btn-info btn-sm">View</a>
+
+          <!-- Delete button with modal -->
+          <button type="button" class="btn btn-danger btn-sm"
+                  data-bs-toggle="modal" data-bs-target="#deleteInvoice{{ inv.id }}">
+            Delete
+          </button>
+
+          <!-- Modal -->
+          <div class="modal fade" id="deleteInvoice{{ inv.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                  <h5 class="modal-title">Confirm Delete</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  Are you sure you want to delete invoice <strong>#{{ inv.id }}</strong>?
+                </div>
+                <div class="modal-footer">
+                  <form method="post" action="{{ url_for('delete_invoice', invoice_id=inv.id) }}">
+                    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                  </form>
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
