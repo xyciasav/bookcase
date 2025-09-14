@@ -2,11 +2,18 @@
 {% block content %}
 <h1>Edit Booking</h1>
 
-<form method="post">
-  <div class="mb-3">
+<form method="post" enctype="multipart/form-data" class="row g-3">
+    <div class="col-md-6">
     <label class="form-label">Customer</label>
-    <input type="text" name="customer" value="{{ booking.customer.name }}" class="form-control" required>
-  </div>
+    <select class="form-select" id="customer_id" name="customer_id" required>
+        <option value="">Select a customer...</option>
+        {% for c in customers %}
+        <option value="{{ c.id }}" {% if order.customer_id == c.id %}selected{% endif %}>
+            {{ c.name }}
+        </option>
+        {% endfor %}
+    </select>
+    </div>
 
   <div class="mb-3">
     <label class="form-label">Type</label>
