@@ -11,7 +11,7 @@ import shutil
 import csv
 
 # --- Config ---
-APP_VERSION = "v0.5.4-dev"  # update manually when you push changes
+APP_VERSION = "v0.6.1-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -134,13 +134,17 @@ class BookingType(db.Model):
 
 class Lead(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=False)
+    contact_name = db.Column(db.String(120), nullable=False)
+    business_name = db.Column(db.String(120), nullable=True)  # optional
+    type = db.Column(db.String(20), nullable=False, default="Personal")  # Business/Personal
+    phone = db.Column(db.String(20), nullable=True)
     email = db.Column(db.String(120), nullable=True)
-    phone = db.Column(db.String(50), nullable=True)
-    source = db.Column(db.String(100), nullable=True)   # e.g. referral, website, ad
-    status = db.Column(db.String(50), default="New")    # New, Contacted, Negotiating, Converted, Lost
+    preferred_contact = db.Column(db.String(20), nullable=True)  # phone, text, email, other
+    last_contacted = db.Column(db.Date, nullable=True)
+
+    status = db.Column(db.String(50), nullable=False, default="New")
+    source = db.Column(db.String(120), nullable=True)
     notes = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 # --- Routes ---
@@ -836,12 +840,29 @@ def invoice_pdf(invoice_id):
 
 @app.route("/leads")
 def leads():
-    q_status = request.args.get("status", "All")
+    page = request.args.get("page", 1, type=int)
+    search = request.args.get("search", "")
+    status_filter = request.args.get("status", "")
+    type_filter = request.args.get("type", "")
+
     query = Lead.query
-    if q_status != "All":
-        query = query.filter(Lead.status == q_status)
-    all_leads = query.order_by(Lead.created_at.desc()).all()
-    return render_template("leads.html", leads=all_leads, q_status=q_status)
+
+    if search:
+        query = query.filter(
+            (Lead.contact_name.ilike(f"%{search}%")) |
+            (Lead.business_name.ilike(f"%{search}%")) |
+            (Lead.email.ilike(f"%{search}%")) |
+            (Lead.phone.ilike(f"%{search}%"))
+        )
+    if status_filter:
+        query = query.filter_by(status=status_filter)
+    if type_filter:
+        query = query.filter_by(type=type_filter)
+
+    leads = query.order_by(Lead.contact_name.asc()).paginate(page=page, per_page=20)
+
+    return render_template("leads.html", leads=leads, search=search,
+                           status_filter=status_filter, type_filter=type_filter)
 
 @app.route("/leads/add", methods=["GET", "POST"])
 def add_lead():

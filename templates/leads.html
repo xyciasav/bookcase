@@ -3,6 +3,30 @@
 <h2>Leads</h2>
 <a href="{{ url_for('add_lead') }}" class="btn btn-primary mb-3">+ Add Lead</a>
 
+<form method="get" class="row mb-3">
+  <div class="col-md-4">
+    <input type="text" name="search" value="{{ search }}" class="form-control" placeholder="Search name, email, phone">
+  </div>
+  <div class="col-md-3">
+    <select name="status" class="form-select">
+      <option value="">All Status</option>
+      <option value="New" {% if status_filter=="New" %}selected{% endif %}>New</option>
+      <option value="Contacted" {% if status_filter=="Contacted" %}selected{% endif %}>Contacted</option>
+      <option value="Converted" {% if status_filter=="Converted" %}selected{% endif %}>Converted</option>
+    </select>
+  </div>
+  <div class="col-md-3">
+    <select name="type" class="form-select">
+      <option value="">All Types</option>
+      <option value="Personal" {% if type_filter=="Personal" %}selected{% endif %}>Personal</option>
+      <option value="Business" {% if type_filter=="Business" %}selected{% endif %}>Business</option>
+    </select>
+  </div>
+  <div class="col-md-2">
+    <button type="submit" class="btn btn-secondary w-100">Filter</button>
+  </div>
+</form>
+
 <table class="table table-striped">
   <thead>
     <tr>
@@ -37,4 +61,23 @@
     {% endfor %}
   </tbody>
 </table>
+
+<nav aria-label="Lead pagination">
+  <ul class="pagination">
+    {% if leads.has_prev %}
+      <li class="page-item"><a class="page-link" href="{{ url_for('leads', page=leads.prev_num, search=search, status=status_filter, type=type_filter) }}">Previous</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">Previous</span></li>
+    {% endif %}
+
+    <li class="page-item disabled"><span class="page-link">Page {{ leads.page }} of {{ leads.pages }}</span></li>
+
+    {% if leads.has_next %}
+      <li class="page-item"><a class="page-link" href="{{ url_for('leads', page=leads.next_num, search=search, status=status_filter, type=type_filter) }}">Next</a></li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">Next</span></li>
+    {% endif %}
+  </ul>
+</nav>
+
 {% endblock %}
