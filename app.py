@@ -864,18 +864,31 @@ def leads():
     return render_template("leads.html", leads=leads, search=search,
                            status_filter=status_filter, type_filter=type_filter)
 
+
 @app.route("/leads/add", methods=["GET", "POST"])
 def add_lead():
     if request.method == "POST":
-        name = request.form["name"]
-        email = request.form.get("email")
+        contact_name = request.form["contact_name"]
+        business_name = request.form.get("business_name")
+        lead_type = request.form.get("type", "Personal")
         phone = request.form.get("phone")
-        source = request.form.get("source")
+        email = request.form.get("email")
+        preferred_contact = request.form.get("preferred_contact")
+        last_contacted = request.form.get("last_contacted")
         status = request.form.get("status", "New")
         notes = request.form.get("notes")
 
-        new_lead = Lead(name=name, email=email, phone=phone,
-                        source=source, status=status, notes=notes)
+        new_lead = Lead(
+            contact_name=contact_name,
+            business_name=business_name,
+            type=lead_type,
+            phone=phone,
+            email=email,
+            preferred_contact=preferred_contact,
+            last_contacted=datetime.strptime(last_contacted, "%Y-%m-%d").date() if last_contacted else None,
+            status=status,
+            notes=notes
+        )
         db.session.add(new_lead)
         db.session.commit()
         flash("Lead added successfully!", "success")
@@ -883,20 +896,28 @@ def add_lead():
 
     return render_template("add_lead.html")
 
+
 @app.route("/leads/edit/<int:lead_id>", methods=["GET", "POST"])
 def edit_lead(lead_id):
     lead = Lead.query.get_or_404(lead_id)
     if request.method == "POST":
-        lead.name = request.form["name"]
-        lead.email = request.form.get("email")
+        lead.contact_name = request.form["contact_name"]
+        lead.business_name = request.form.get("business_name")
+        lead.type = request.form.get("type", lead.type)
         lead.phone = request.form.get("phone")
-        lead.source = request.form.get("source")
+        lead.email = request.form.get("email")
+        lead.preferred_contact = request.form.get("preferred_contact")
+        last_contacted = request.form.get("last_contacted")
+        lead.last_contacted = datetime.strptime(last_contacted, "%Y-%m-%d").date() if last_contacted else None
         lead.status = request.form.get("status", lead.status)
         lead.notes = request.form.get("notes")
+
         db.session.commit()
         flash("Lead updated!", "success")
         return redirect(url_for("leads"))
+
     return render_template("edit_lead.html", lead=lead)
+
 
 @app.route("/leads/delete/<int:lead_id>", methods=["POST"])
 def delete_lead(lead_id):
@@ -906,13 +927,14 @@ def delete_lead(lead_id):
     flash("Lead deleted!", "danger")
     return redirect(url_for("leads"))
 
+
 @app.route("/leads/convert/<int:lead_id>", methods=["POST"])
 def convert_lead(lead_id):
     lead = Lead.query.get_or_404(lead_id)
 
     # Create a new customer from lead data
     customer = Customer(
-        name=lead.name,
+        name=lead.contact_name,   # <-- was lead.name
         email=lead.email,
         phone=lead.phone,
         notes=lead.notes
@@ -923,7 +945,7 @@ def convert_lead(lead_id):
     lead.status = "Converted"
     db.session.commit()
 
-    flash(f"Lead {lead.name} converted to customer!", "success")
+    flash(f"Lead {lead.contact_name} converted to customer!", "success")
     return redirect(url_for("customers"))
 
 # ------------------ Settings (Job Types) ------------------
