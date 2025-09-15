@@ -130,6 +130,18 @@ class BookingType(db.Model):
 
     def __repr__(self):
         return f"<BookingType {self.name}>"
+    
+
+class Lead(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), nullable=True)
+    phone = db.Column(db.String(50), nullable=True)
+    source = db.Column(db.String(100), nullable=True)   # e.g. referral, website, ad
+    status = db.Column(db.String(50), default="New")    # New, Contacted, Negotiating, Converted, Lost
+    notes = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 # --- Routes ---
 @app.route('/')
@@ -819,6 +831,79 @@ def invoice_pdf(invoice_id):
     doc.build(elements)
 
     return send_file(filepath, as_attachment=True)
+
+# ------------------ Leads ------------------
+
+@app.route("/leads")
+def leads():
+    q_status = request.args.get("status", "All")
+    query = Lead.query
+    if q_status != "All":
+        query = query.filter(Lead.status == q_status)
+    all_leads = query.order_by(Lead.created_at.desc()).all()
+    return render_template("leads.html", leads=all_leads, q_status=q_status)
+
+@app.route("/leads/add", methods=["GET", "POST"])
+def add_lead():
+    if request.method == "POST":
+        name = request.form["name"]
+        email = request.form.get("email")
+        phone = request.form.get("phone")
+        source = request.form.get("source")
+        status = request.form.get("status", "New")
+        notes = request.form.get("notes")
+
+        new_lead = Lead(name=name, email=email, phone=phone,
+                        source=source, status=status, notes=notes)
+        db.session.add(new_lead)
+        db.session.commit()
+        flash("Lead added successfully!", "success")
+        return redirect(url_for("leads"))
+
+    return render_template("add_lead.html")
+
+@app.route("/leads/edit/<int:lead_id>", methods=["GET", "POST"])
+def edit_lead(lead_id):
+    lead = Lead.query.get_or_404(lead_id)
+    if request.method == "POST":
+        lead.name = request.form["name"]
+        lead.email = request.form.get("email")
+        lead.phone = request.form.get("phone")
+        lead.source = request.form.get("source")
+        lead.status = request.form.get("status", lead.status)
+        lead.notes = request.form.get("notes")
+        db.session.commit()
+        flash("Lead updated!", "success")
+        return redirect(url_for("leads"))
+    return render_template("edit_lead.html", lead=lead)
+
+@app.route("/leads/delete/<int:lead_id>", methods=["POST"])
+def delete_lead(lead_id):
+    lead = Lead.query.get_or_404(lead_id)
+    db.session.delete(lead)
+    db.session.commit()
+    flash("Lead deleted!", "danger")
+    return redirect(url_for("leads"))
+
+@app.route("/leads/convert/<int:lead_id>", methods=["POST"])
+def convert_lead(lead_id):
+    lead = Lead.query.get_or_404(lead_id)
+
+    # Create a new customer from lead data
+    customer = Customer(
+        name=lead.name,
+        email=lead.email,
+        phone=lead.phone,
+        notes=lead.notes
+    )
+    db.session.add(customer)
+
+    # Mark lead as converted
+    lead.status = "Converted"
+    db.session.commit()
+
+    flash(f"Lead {lead.name} converted to customer!", "success")
+    return redirect(url_for("customers"))
 
 # ------------------ Settings (Job Types) ------------------
 
