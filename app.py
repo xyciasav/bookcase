@@ -434,6 +434,7 @@ def add_workorder():
     if request.method == "POST":
         customer_id = int(request.form["customer_id"])
         description = request.form.get("description")
+        order_types = request.form.getlist("order_types")  
         priority = request.form.get("priority", "Medium")
         due_date_str = request.form.get("due_date")
         status = request.form.get("status", "New")
@@ -441,17 +442,15 @@ def add_workorder():
 
         due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
 
-        order_type_ids = request.form.getlist("order_types")
-
-        for type_id in order_type_ids:
-            wtype = WorkOrderType.query.get(int(type_id))
-            price = wtype.base_price if wtype else 0.0
-
+        # Loop through each selected order type
+        for ot in order_types:
+            # you could later connect this to WorkOrderType with pricing
+            price = 0.0
             new_order = WorkOrder(
                 customer_id=customer_id,
                 booking_id=int(booking_id) if booking_id else None,
                 description=description,
-                order_type=wtype.name if wtype else "Other",
+                order_type=ot,
                 price=price,
                 priority=priority,
                 due_date=due_date,
@@ -462,10 +461,12 @@ def add_workorder():
         db.session.commit()
         flash("Work order(s) added successfully!", "success")
 
+        # redirect back to booking page if created from there
         if booking_id:
             return redirect(url_for("view_booking", booking_id=booking_id))
         return redirect(url_for("workorders"))
 
+    # --- GET ---
     booking_id = request.args.get("booking_id")
     preselected_customer = None
     if booking_id:
@@ -475,14 +476,15 @@ def add_workorder():
 
     customers = Customer.query.order_by(Customer.name.asc()).all()
     workorder_types = WorkOrderType.query.order_by(WorkOrderType.name.asc()).all()
+
     return render_template(
         "add_workorder.html",
         customers=customers,
-        workorder_types=workorder_types,
+        workorder_types=workorder_types, 
         preselected_customer=preselected_customer,
         booking_id=booking_id
     )
-
+    
 @app.route("/workorders/edit/<int:workorder_id>", methods=["GET", "POST"])
 def edit_workorder(workorder_id):
     order = WorkOrder.query.get_or_404(workorder_id)

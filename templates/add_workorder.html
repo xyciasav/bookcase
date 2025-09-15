@@ -18,9 +18,9 @@
   </div>
 <div class="col-md-6">
   <label class="form-label">Type(s)</label>
-  <select name="order_types" multiple class="form-control">
-    {% for wt in workorder_types %}
-      <option value="{{ wt.id }}">{{ wt.name }}</option>
+  <select name="order_types" multiple class="form-select">
+    {% for wt in work_order_types %}
+      <option value="{{ wt.name }}">{{ wt.name }}</option>
     {% endfor %}
   </select>
   <small class="form-text text-muted">Hold CTRL (or CMD on Mac) to select multiple.</small>

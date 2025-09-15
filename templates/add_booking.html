@@ -17,7 +17,7 @@
 
 <div class="mb-3">
   <label for="booking_type_id" class="form-label">Booking Type</label>
-  <select id="booking_type_id" name="booking_type_id" class="form-control" required>
+  <select name="booking_type_id" class="form-select" required>
     <option value="">Select booking type...</option>
     {% for bt in booking_types %}
       <option value="{{ bt.id }}" {% if booking and booking.booking_type_id == bt.id %}selected{% endif %}>
@@ -26,6 +26,7 @@
     {% endfor %}
   </select>
 </div>
+
 
     <!-- Event date -->
     <div class="mb-3">
