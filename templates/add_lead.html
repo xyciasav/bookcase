@@ -47,12 +47,13 @@
     </div>
   </div>
 
- <div class="mb-3">
+<div class="mb-3">
     <label>Status</label>
-    <select name="status" class="form-control">
-      {% for s in ["New", "Contacted", "Negotiating", "Converted", "Lost"] %}
-      <option value="{{ s }}" {% if lead.status == s %}selected{% endif %}>{{ s }}</option>
-      {% endfor %}
+    <select name="status" class="form-select">
+      <option value="New">New</option>
+      <option value="Contacted">Contacted</option>
+      <option value="Converted">Converted</option>
+      <option value="Lost">Lost</option>
     </select>
   </div>
 
