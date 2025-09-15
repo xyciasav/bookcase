@@ -11,7 +11,7 @@ import shutil
 import csv
 
 # --- Config ---
-APP_VERSION = "v0.6.3-dev"  # update manually when you push changes
+APP_VERSION = "v0.6.4-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -86,6 +86,14 @@ class Customer(db.Model):
     workorders = db.relationship("WorkOrder", back_populates="customer", lazy=True)
     invoices = db.relationship("Invoice", back_populates="customer", lazy=True)
 
+class WorkOrderType(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    base_price = db.Column(db.Float, default=0.0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<WorkOrderType {self.name} - ${self.base_price:.2f}>"
     
 class JobType(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -426,33 +434,34 @@ def add_workorder():
     if request.method == "POST":
         customer_id = int(request.form["customer_id"])
         description = request.form.get("description")
-        order_type = request.form["order_type"]
         priority = request.form.get("priority", "Medium")
         due_date_str = request.form.get("due_date")
         status = request.form.get("status", "New")
-        booking_id = request.form.get("booking_id")  #  NEW
+        booking_id = request.form.get("booking_id")
 
         due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
 
-        jobtype = JobType.query.filter_by(name=order_type).first()
-        price = jobtype.base_price if jobtype else 0.0
+        order_type_ids = request.form.getlist("order_types")
 
-        new_order = WorkOrder(
-            customer_id=customer_id,
-            booking_id=int(booking_id) if booking_id else None,  #  tie to booking
-            description=description,
-            order_type=order_type,
-            price=price,
-            priority=priority,
-            due_date=due_date,
-            status=status
-        )
-        db.session.add(new_order)
+        for type_id in order_type_ids:
+            wtype = WorkOrderType.query.get(int(type_id))
+            price = wtype.base_price if wtype else 0.0
+
+            new_order = WorkOrder(
+                customer_id=customer_id,
+                booking_id=int(booking_id) if booking_id else None,
+                description=description,
+                order_type=wtype.name if wtype else "Other",
+                price=price,
+                priority=priority,
+                due_date=due_date,
+                status=status
+            )
+            db.session.add(new_order)
+
         db.session.commit()
+        flash("Work order(s) added successfully!", "success")
 
-        flash("Work order added successfully!", "success")
-
-        # redirect back to booking page if created from there
         if booking_id:
             return redirect(url_for("view_booking", booking_id=booking_id))
         return redirect(url_for("workorders"))
@@ -465,13 +474,13 @@ def add_workorder():
             preselected_customer = booking.customer_id
 
     customers = Customer.query.order_by(Customer.name.asc()).all()
-    job_types = JobType.query.order_by(JobType.name.asc()).all()
+    workorder_types = WorkOrderType.query.order_by(WorkOrderType.name.asc()).all()
     return render_template(
         "add_workorder.html",
         customers=customers,
-        job_types=job_types,
+        workorder_types=workorder_types,
         preselected_customer=preselected_customer,
-        booking_id=booking_id  #  pass along
+        booking_id=booking_id
     )
 
 @app.route("/workorders/edit/<int:workorder_id>", methods=["GET", "POST"])
@@ -507,6 +516,46 @@ def delete_workorder(workorder_id):
     db.session.commit()
     flash("Work order deleted!", "danger")
     return redirect(url_for("workorders"))
+
+# ------------------Workorder type -----------------
+
+@app.route("/settings/workordertypes")
+def workorder_types():
+    types = WorkOrderType.query.order_by(WorkOrderType.name.asc()).all()
+    return render_template("workordertypes.html", workorder_types=types)
+
+@app.route("/settings/workordertypes/add", methods=["POST"])
+def add_workorder_type():
+    name = request.form.get("name")
+    price = float(request.form.get("price", 0))
+    if name:
+        existing = WorkOrderType.query.filter_by(name=name).first()
+        if not existing:
+            db.session.add(WorkOrderType(name=name, base_price=price))
+            db.session.commit()
+            flash("Work order type added!", "success")
+        else:
+            flash("Work order type already exists!", "warning")
+    return redirect(url_for("workorder_types"))
+
+@app.route("/settings/workordertypes/delete/<int:type_id>", methods=["POST"])
+def delete_workorder_type(type_id):
+    wtype = WorkOrderType.query.get_or_404(type_id)
+    db.session.delete(wtype)
+    db.session.commit()
+    flash("Work order type deleted!", "danger")
+    return redirect(url_for("workorder_types"))
+
+@app.route("/settings/workordertypes/edit/<int:type_id>", methods=["GET", "POST"])
+def edit_workorder_type(type_id):
+    wt = WorkOrderType.query.get_or_404(type_id)
+    if request.method == "POST":
+        wt.name = request.form.get("name")
+        wt.base_price = float(request.form.get("price", 0))
+        db.session.commit()
+        flash("Work order type updated!", "success")
+        return redirect(url_for("workorder_types"))
+    return render_template("edit_workorder_type.html", workorder_type=wt)
 
 # ------------------ Bookings ------------------
 

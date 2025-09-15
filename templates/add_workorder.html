@@ -16,15 +16,15 @@
       {% endfor %}
     </select>
   </div>
-    <div class="col-md-6">
-    <label class="form-label">Type</label>
-    <select name="order_type" class="form-select" required>
-      <option value="">Select a type...</option>
-      {% for t in job_types %}
-        <option value="{{ t.name }}">{{ t.name }}</option>
-      {% endfor %}
-    </select>
-  </div>
+<div class="col-md-6">
+  <label class="form-label">Type(s)</label>
+  <select name="order_types" multiple class="form-control">
+    {% for wt in workorder_types %}
+      <option value="{{ wt.id }}">{{ wt.name }}</option>
+    {% endfor %}
+  </select>
+  <small class="form-text text-muted">Hold CTRL (or CMD on Mac) to select multiple.</small>
+</div>
   <div class="col-md-6">
     <label class="form-label">Priority</label>
     <select name="priority" class="form-select">
