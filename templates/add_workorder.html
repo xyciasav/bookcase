@@ -2,10 +2,9 @@
 {% block content %}
 <h1 class="mb-4">Add Work Order</h1>
 
-<input type="hidden" name="booking_id" value="{{ booking_id }}">
-
 <form method="post" enctype="multipart/form-data" class="row g-3">
-    <div class="mb-3">
+  <!-- Customer -->
+  <div class="mb-3">
     <label for="customer_id" class="form-label">Customer</label>
     <select class="form-select" id="customer_id" name="customer_id" required>
       <option value="">Select a customer...</option>
@@ -16,15 +15,19 @@
       {% endfor %}
     </select>
   </div>
-<div class="col-md-6">
-  <label class="form-label">Type(s)</label>
-  <select name="order_types" multiple class="form-select">
-    {% for wt in work_order_types %}
-      <option value="{{ wt.name }}">{{ wt.name }}</option>
-    {% endfor %}
-  </select>
-  <small class="form-text text-muted">Hold CTRL (or CMD on Mac) to select multiple.</small>
-</div>
+
+  <!-- Work Order Type(s) -->
+  <div class="col-md-6">
+    <label class="form-label">Type(s)</label>
+    <select name="order_types" multiple class="form-control">
+      {% for wt in workorder_types %}
+        <option value="{{ wt.name }}">{{ wt.name }}</option>
+      {% endfor %}
+    </select>
+    <small class="form-text text-muted">Hold CTRL (or CMD on Mac) to select multiple.</small>
+  </div>
+
+  <!-- Priority -->
   <div class="col-md-6">
     <label class="form-label">Priority</label>
     <select name="priority" class="form-select">
@@ -33,18 +36,26 @@
       <option value="High">High</option>
     </select>
   </div>
+
+  <!-- Due Date -->
   <div class="col-md-6">
     <label class="form-label">Due Date</label>
     <input type="date" name="due_date" class="form-control">
   </div>
+
+  <!-- Description -->
   <div class="col-12">
     <label class="form-label">Description</label>
     <textarea name="description" class="form-control" rows="3"></textarea>
   </div>
+
+  <!-- File Upload -->
   <div class="col-12">
     <label class="form-label">File Upload</label>
     <input type="file" name="file" class="form-control">
   </div>
+
+  <!-- Status -->
   <div class="col-12">
     <label class="form-label">Status</label>
     <select name="status" class="form-select">
@@ -53,13 +64,16 @@
       <option value="Closed">Closed</option>
     </select>
   </div>
+
+  <!-- Hidden booking_id if coming from booking -->
+  {% if request.args.get('booking_id') %}
+    <input type="hidden" name="booking_id" value="{{ request.args.get('booking_id') }}">
+  {% endif %}
+
+  <!-- Buttons -->
   <div class="col-12">
     <button type="submit" class="btn btn-primary">Save</button>
     <a href="{{ url_for('workorders') }}" class="btn btn-secondary">Cancel</a>
-      
-  {% if request.args.get('booking_id') %}
-  <input type="hidden" name="booking_id" value="{{ request.args.get('booking_id') }}">
-{% endif %}
   </div>
 </form>
 {% endblock %}
