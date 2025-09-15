@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Add Lead</h2>
+    <form method="POST" action="{{ url_for('add_lead') }}">
+        <!-- Contact Name -->
+        <div class="form-group">
+            <label for="contact_name">Contact Name</label>
+            <input type="text" class="form-control" name="contact_name" id="contact_name" required>
+        </div>
+
+        <!-- Business Name -->
+        <div class="form-group">
+            <label for="business_name">Business Name (Optional)</label>
+            <input type="text" class="form-control" name="business_name" id="business_name">
+        </div>
+
+        <!-- Type -->
+        <div class="form-group">
+            <label for="type">Type</label>
+            <select class="form-control" name="type" id="type">
+                <option value="Business">Business</option>
+                <option value="Personal">Personal</option>
+            </select>
+        </div>
+
+        <!-- Phone -->
+        <div class="form-group">
+            <label for="phone">Phone</label>
+            <input type="text" class="form-control" name="phone" id="phone">
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" class="form-control" name="email" id="email">
+        </div>
+
+        <!-- Preferred Contact -->
+        <div class="form-group">
+            <label for="preferred_contact">Preferred Contact Method</label>
+            <select class="form-control" name="preferred_contact" id="preferred_contact">
+                <option value="phone">Phone</option>
+                <option value="text">Text</option>
+                <option value="email">Email</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+
+        <!-- Last Contacted -->
+        <div class="form-group">
+            <label for="last_contacted">Last Contacted</label>
+            <input type="date" class="form-control" name="last_contacted" id="last_contacted">
+        </div>
+
+        <!-- Status -->
+        <div class="form-group">
+            <label for="status">Status</label>
+            <select class="form-control" name="status" id="status">
+                <option value="New">New</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Converted">Converted</option>
+                <option value="Closed">Closed</option>
+            </select>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group">
+            <label for="notes">Notes</label>
+            <textarea class="form-control" name="notes" id="notes"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Lead</button>
+        <a href="{{ url_for('leads') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

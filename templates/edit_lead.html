@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Edit Lead</h2>
+    <form method="POST" action="{{ url_for('edit_lead', lead_id=lead.id) }}">
+        <!-- Contact Name -->
+        <div class="form-group">
+            <label for="contact_name">Contact Name</label>
+            <input type="text" class="form-control" name="contact_name" id="contact_name"
+                   value="{{ lead.contact_name }}" required>
+        </div>
+
+        <!-- Business Name -->
+        <div class="form-group">
+            <label for="business_name">Business Name (Optional)</label>
+            <input type="text" class="form-control" name="business_name" id="business_name"
+                   value="{{ lead.business_name }}">
+        </div>
+
+        <!-- Type -->
+        <div class="form-group">
+            <label for="type">Type</label>
+            <select class="form-control" name="type" id="type">
+                <option value="Business" {% if lead.type == "Business" %}selected{% endif %}>Business</option>
+                <option value="Personal" {% if lead.type == "Personal" %}selected{% endif %}>Personal</option>
+            </select>
+        </div>
+
+        <!-- Phone -->
+        <div class="form-group">
+            <label for="phone">Phone</label>
+            <input type="text" class="form-control" name="phone" id="phone"
+                   value="{{ lead.phone }}">
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" class="form-control" name="email" id="email"
+                   value="{{ lead.email }}">
+        </div>
+
+        <!-- Preferred Contact -->
+        <div class="form-group">
+            <label for="preferred_contact">Preferred Contact Method</label>
+            <select class="form-control" name="preferred_contact" id="preferred_contact">
+                <option value="phone" {% if lead.preferred_contact == "phone" %}selected{% endif %}>Phone</option>
+                <option value="text" {% if lead.preferred_contact == "text" %}selected{% endif %}>Text</option>
+                <option value="email" {% if lead.preferred_contact == "email" %}selected{% endif %}>Email</option>
+                <option value="other" {% if lead.preferred_contact == "other" %}selected{% endif %}>Other</option>
+            </select>
+        </div>
+
+        <!-- Last Contacted -->
+        <div class="form-group">
+            <label for="last_contacted">Last Contacted</label>
+            <input type="date" class="form-control" name="last_contacted" id="last_contacted"
+                   value="{{ lead.last_contacted.strftime('%Y-%m-%d') if lead.last_contacted }}">
+        </div>
+
+        <!-- Status -->
+        <div class="form-group">
+            <label for="status">Status</label>
+            <select class="form-control" name="status" id="status">
+                <option value="New" {% if lead.status == "New" %}selected{% endif %}>New</option>
+                <option value="In Progress" {% if lead.status == "In Progress" %}selected{% endif %}>In Progress</option>
+                <option value="Converted" {% if lead.status == "Converted" %}selected{% endif %}>Converted</option>
+                <option value="Closed" {% if lead.status == "Closed" %}selected{% endif %}>Closed</option>
+            </select>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group">
+            <label for="notes">Notes</label>
+            <textarea class="form-control" name="notes" id="notes">{{ lead.notes }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Update Lead</button>
+        <a href="{{ url_for('leads') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

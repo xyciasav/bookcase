@@ -7,10 +7,15 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 import os
+import shutil
 import csv
 
 # --- Config ---
+<<<<<<< HEAD
 APP_VERSION = "v0.4.20-prod"  # update manually when you push changes
+=======
+APP_VERSION = "v0.6.3-dev"  # update manually when you push changes
+>>>>>>> dev
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -69,7 +74,8 @@ class Booking(db.Model):
     customer = db.relationship("Customer", back_populates="bookings")
     workorders = db.relationship("WorkOrder", back_populates="booking", lazy=True)
     invoices = db.relationship("Invoice", back_populates="booking", lazy=True)
-
+    booking_type_id = db.Column(db.Integer, db.ForeignKey("booking_type.id"), nullable=False)
+    booking_type = db.relationship("BookingType", backref="bookings")
     
 class Customer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -104,7 +110,12 @@ class Invoice(db.Model):
 
     customer = db.relationship("Customer", back_populates="invoices")
     booking = db.relationship("Booking", back_populates="invoices")
-    items = db.relationship("InvoiceItem", backref="invoice", lazy=True)
+    items = db.relationship(
+        "InvoiceItem",
+        backref="invoice",
+        lazy=True,
+        cascade="all, delete-orphan"  
+    )
 
 class InvoiceItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -115,6 +126,29 @@ class InvoiceItem(db.Model):
 
     def subtotal(self):
         return self.price * self.quantity
+
+class BookingType(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<BookingType {self.name}>"
+    
+
+class Lead(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    contact_name = db.Column(db.String(120), nullable=False)
+    business_name = db.Column(db.String(120), nullable=True)  # optional
+    type = db.Column(db.String(20), nullable=False, default="Personal")  # Business/Personal
+    phone = db.Column(db.String(20), nullable=True)
+    email = db.Column(db.String(120), nullable=True)
+    preferred_contact = db.Column(db.String(20), nullable=True)  # phone, text, email, other
+    last_contacted = db.Column(db.Date, nullable=True)
+
+    status = db.Column(db.String(50), nullable=False, default="New")
+    source = db.Column(db.String(120), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
 
 
 # --- Routes ---
@@ -152,6 +186,7 @@ def dashboard():
         .filter(Booking.paid_status != "Paid").scalar()
     paid_bookings = db.session.query(db.func.count(Booking.id))\
         .filter(Booking.paid_status == "Paid").scalar()
+    
 
     # --- Work Orders ---
     total_orders = db.session.query(db.func.count(WorkOrder.id)).scalar()
@@ -488,7 +523,7 @@ def bookings():
 
     all_bookings = query.order_by(Booking.event_date.asc()).all()
     return render_template("bookings.html", bookings=all_bookings, q_status=q_status)
-
+    
 @app.route("/bookings/add", methods=["GET", "POST"])
 def add_booking():
     if request.method == "POST":
@@ -500,7 +535,9 @@ def add_booking():
         expected_income = float(request.form.get("expected_income", 0))
         paid_status = request.form.get("paid_status", "Pending")
         notes = request.form.get("notes")
+        booking_type_id = int(request.form["booking_type_id"])
 
+        
         new_booking = Booking(
             customer_id=customer_id,
             booking_type=booking_type,
@@ -563,7 +600,9 @@ def edit_booking(booking_id):
         booking.expected_income = float(request.form.get("expected_income", 0))
         booking.paid_status = request.form.get("paid_status", "Pending")
         booking.notes = request.form.get("notes")
+        booking_type_id = int(request.form["booking_type_id"])
 
+        
         db.session.commit()
         flash("Booking updated successfully!", "success")
         return redirect(url_for("bookings"))
@@ -748,7 +787,7 @@ def delete_invoice(invoice_id):
     db.session.delete(invoice)
     db.session.commit()
     flash(f"Invoice #{invoice.id} deleted!", "danger")
-    return redirect(url_for("invoices_list"))
+    return redirect(url_for("invoices"))
 
 @app.route("/invoices/<int:invoice_id>/pdf")
 def invoice_pdf(invoice_id):
@@ -801,6 +840,118 @@ def invoice_pdf(invoice_id):
 
     return send_file(filepath, as_attachment=True)
 
+# ------------------ Leads ------------------
+
+@app.route("/leads")
+def leads():
+    page = request.args.get("page", 1, type=int)
+    search = request.args.get("search", "")
+    status_filter = request.args.get("status", "")
+    type_filter = request.args.get("type", "")
+
+    query = Lead.query
+
+    if search:
+        query = query.filter(
+            (Lead.contact_name.ilike(f"%{search}%")) |
+            (Lead.business_name.ilike(f"%{search}%")) |
+            (Lead.email.ilike(f"%{search}%")) |
+            (Lead.phone.ilike(f"%{search}%"))
+        )
+    if status_filter:
+        query = query.filter_by(status=status_filter)
+    if type_filter:
+        query = query.filter_by(type=type_filter)
+
+    leads = query.order_by(Lead.contact_name.asc()).paginate(page=page, per_page=20)
+
+    return render_template("leads.html", leads=leads, search=search,
+                           status_filter=status_filter, type_filter=type_filter)
+
+
+@app.route("/leads/add", methods=["GET", "POST"])
+def add_lead():
+    if request.method == "POST":
+        contact_name = request.form["contact_name"]
+        business_name = request.form.get("business_name")
+        lead_type = request.form.get("type", "Personal")
+        phone = request.form.get("phone")
+        email = request.form.get("email")
+        preferred_contact = request.form.get("preferred_contact")
+        last_contacted = request.form.get("last_contacted")
+        status = request.form.get("status", "New")
+        notes = request.form.get("notes")
+
+        new_lead = Lead(
+            contact_name=contact_name,
+            business_name=business_name,
+            type=lead_type,
+            phone=phone,
+            email=email,
+            preferred_contact=preferred_contact,
+            last_contacted=datetime.strptime(last_contacted, "%Y-%m-%d").date() if last_contacted else None,
+            status=status,
+            notes=notes
+        )
+        db.session.add(new_lead)
+        db.session.commit()
+        flash("Lead added successfully!", "success")
+        return redirect(url_for("leads"))
+
+    return render_template("add_lead.html")
+
+
+@app.route("/leads/edit/<int:lead_id>", methods=["GET", "POST"])
+def edit_lead(lead_id):
+    lead = Lead.query.get_or_404(lead_id)
+    if request.method == "POST":
+        lead.contact_name = request.form["contact_name"]
+        lead.business_name = request.form.get("business_name")
+        lead.type = request.form.get("type", lead.type)
+        lead.phone = request.form.get("phone")
+        lead.email = request.form.get("email")
+        lead.preferred_contact = request.form.get("preferred_contact")
+        last_contacted = request.form.get("last_contacted")
+        lead.last_contacted = datetime.strptime(last_contacted, "%Y-%m-%d").date() if last_contacted else None
+        lead.status = request.form.get("status", lead.status)
+        lead.notes = request.form.get("notes")
+
+        db.session.commit()
+        flash("Lead updated!", "success")
+        return redirect(url_for("leads"))
+
+    return render_template("edit_lead.html", lead=lead)
+
+
+@app.route("/leads/delete/<int:lead_id>", methods=["POST"])
+def delete_lead(lead_id):
+    lead = Lead.query.get_or_404(lead_id)
+    db.session.delete(lead)
+    db.session.commit()
+    flash("Lead deleted!", "danger")
+    return redirect(url_for("leads"))
+
+
+@app.route("/leads/convert/<int:lead_id>", methods=["POST"])
+def convert_lead(lead_id):
+    lead = Lead.query.get_or_404(lead_id)
+
+    # Create a new customer from lead data
+    customer = Customer(
+        name=lead.contact_name,   # <-- was lead.name
+        email=lead.email,
+        phone=lead.phone,
+        notes=lead.notes
+    )
+    db.session.add(customer)
+
+    # Mark lead as converted
+    lead.status = "Converted"
+    db.session.commit()
+
+    flash(f"Lead {lead.contact_name} converted to customer!", "success")
+    return redirect(url_for("customers"))
+
 # ------------------ Settings (Job Types) ------------------
 
 @app.route("/settings/jobtypes")
@@ -840,6 +991,64 @@ def edit_jobtype(type_id):
         flash("Job type updated!", "success")
         return redirect(url_for("jobtypes"))
     return render_template("edit_jobtype.html", jobtype=jt)
+
+
+# --------------------Booking Types --------------
+
+@app.route("/settings/bookingtypes")
+def bookingtypes():
+    types = BookingType.query.order_by(BookingType.name.asc()).all()
+    return render_template("bookingtypes.html", booking_types=types)
+
+@app.route("/settings/bookingtypes/add", methods=["POST"])
+def add_bookingtype():
+    name = request.form.get("name")
+    if name:
+        existing = BookingType.query.filter_by(name=name).first()
+        if not existing:
+            db.session.add(BookingType(name=name))
+            db.session.commit()
+            flash("Booking type added!", "success")
+        else:
+            flash("Booking type already exists!", "warning")
+    return redirect(url_for("bookingtypes"))
+
+@app.route("/settings/bookingtypes/delete/<int:type_id>", methods=["POST"])
+def delete_bookingtype(type_id):
+    btype = BookingType.query.get_or_404(type_id)
+    db.session.delete(btype)
+    db.session.commit()
+    flash("Booking type deleted!", "danger")
+    return redirect(url_for("bookingtypes"))
+
+@app.route("/settings/bookingtypes/edit/<int:type_id>", methods=["GET", "POST"])
+def edit_bookingtype(type_id):
+    bt = BookingType.query.get_or_404(type_id)
+    if request.method == "POST":
+        bt.name = request.form.get("name")
+        db.session.commit()
+        flash("Booking type updated!", "success")
+        return redirect(url_for("bookingtypes"))
+    return render_template("edit_bookingtype.html", bookingtype=bt)
+
+# -------------------Backup ---------------------
+
+@app.route("/settings/backup", methods=["POST"])
+def backup_database():
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_dir = os.path.join(app.root_path, "backups")
+    os.makedirs(backup_dir, exist_ok=True)
+
+    # Path to SQLite file inside Flask's instance folder
+    db_path = os.path.join(app.instance_path, "business.db")
+
+    backup_filename = f"backup_{timestamp}.db"
+    backup_path = os.path.join(backup_dir, backup_filename)
+
+    shutil.copy(db_path, backup_path)
+
+    flash(f"Database backup created: {backup_filename}", "success")
+    return redirect(url_for("jobtypes"))  # back to settings
 
 # ------------------ Run ------------------
 @app.context_processor
