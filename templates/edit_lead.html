@@ -2,34 +2,66 @@
 {% block content %}
 <h2>Edit Lead</h2>
 <form method="post">
-  <div class="mb-3">
-    <label>Name</label>
-    <input type="text" name="name" class="form-control" value="{{ lead.name }}" required>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <label>Contact Name</label>
+      <input type="text" name="contact_name" class="form-control" required>
+    </div>
+    <div class="col-md-6">
+      <label>Business Name (optional)</label>
+      <input type="text" name="business_name" class="form-control">
+    </div>
   </div>
-  <div class="mb-3">
-    <label>Email</label>
-    <input type="email" name="email" class="form-control" value="{{ lead.email }}">
+
+  <div class="row mb-3">
+    <div class="col-md-4">
+      <label>Type</label>
+      <select name="type" class="form-select">
+        <option value="Personal">Personal</option>
+        <option value="Business">Business</option>
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label>Phone</label>
+      <input type="text" name="phone" class="form-control">
+    </div>
+    <div class="col-md-4">
+      <label>Email</label>
+      <input type="email" name="email" class="form-control">
+    </div>
   </div>
-  <div class="mb-3">
-    <label>Phone</label>
-    <input type="text" name="phone" class="form-control" value="{{ lead.phone }}">
+
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <label>Preferred Contact Method</label>
+      <select name="preferred_contact" class="form-select">
+        <option value="phone">Phone</option>
+        <option value="text">Text</option>
+        <option value="email">Email</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label>Date Last Contacted</label>
+      <input type="date" name="last_contacted" class="form-control">
+    </div>
   </div>
-  <div class="mb-3">
-    <label>Source</label>
-    <input type="text" name="source" class="form-control" value="{{ lead.source }}">
-  </div>
+
   <div class="mb-3">
     <label>Status</label>
-    <select name="status" class="form-control">
-      {% for s in ["New", "Contacted", "Negotiating", "Converted", "Lost"] %}
-      <option value="{{ s }}" {% if lead.status == s %}selected{% endif %}>{{ s }}</option>
-      {% endfor %}
+    <select name="status" class="form-select">
+      <option value="New">New</option>
+      <option value="Contacted">Contacted</option>
+      <option value="Converted">Converted</option>
     </select>
   </div>
+
   <div class="mb-3">
     <label>Notes</label>
-    <textarea name="notes" class="form-control">{{ lead.notes }}</textarea>
+    <textarea name="notes" class="form-control"></textarea>
   </div>
-  <button type="submit" class="btn btn-primary">Update</button>
+
+  <button type="submit" class="btn btn-primary">Save Lead</button>
 </form>
+
 {% endblock %}
