@@ -18,12 +18,11 @@
   </div>
     <div class="col-md-6">
     <label class="form-label">Type</label>
-    <select name="order_type" class="form-select" required>
-      <option value="">Select a type...</option>
-      {% for t in job_types %}
-        <option value="{{ t.name }}">{{ t.name }}</option>
-      {% endfor %}
-    </select>
+  <select name="order_types" multiple class="form-control">
+    {% for jt in job_types %}
+      <option value="{{ jt.name }}">{{ jt.name }}</option>
+    {% endfor %}
+  </select>
   </div>
   <div class="col-md-6">
     <label class="form-label">Priority</label>
