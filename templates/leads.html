@@ -46,7 +46,7 @@
       <td>{{ lead.business_name or '' }}</td>
       <td>{{ lead.email or '' }}</td>
       <td>{{ lead.phone or '' }}</td>
-      <td>{{ lead.source or '' }}</td>
+      <td>{{ lead.preferred_contact or '' }}</td>
       <td><span class="badge bg-info">{{ lead.status }}</span></td>
       <td>
         <a href="{{ url_for('edit_lead', lead_id=lead.id) }}" class="btn btn-sm btn-secondary">Edit</a>
