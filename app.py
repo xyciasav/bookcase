@@ -11,7 +11,7 @@ import shutil
 import csv
 
 # --- Config ---
-APP_VERSION = "v0.6.16-dev"  # update manually when you push changes
+APP_VERSION = "v0.6.17-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -744,6 +744,10 @@ def delete_customer(customer_id):
     flash("Customer deleted!", "danger")
     return redirect(url_for("customers"))
 
+@app.route("/customers/<int:customer_id>", endpoint="view_customer")
+def view_customer(customer_id):
+    customer = Customer.query.get_or_404(customer_id)
+    return render_template("view_customer.html", customer=customer)
 
 @app.before_request
 def seed_job_types():
