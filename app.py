@@ -11,7 +11,7 @@ import shutil
 import csv
 
 # --- Config ---
-APP_VERSION = "v0.6.12-dev"  # update manually when you push changes
+APP_VERSION = "v0.6.13-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -59,14 +59,14 @@ class WorkOrder(db.Model):
 class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customer.id"), nullable=False)
-
     booking_type_id = db.Column(db.Integer, db.ForeignKey("booking_type.id"), nullable=False)
     booking_type = db.relationship("BookingType", backref="bookings")
-    partial_amount = db.Column(db.Float, nullable=True)
+
     event_date = db.Column(db.Date, nullable=False)
     secondary_date = db.Column(db.Date, nullable=True)
     expected_income = db.Column(db.Float, nullable=False, default=0.0)
     paid_status = db.Column(db.String(10), default="Pending")
+    partial_amount = db.Column(db.Float, nullable=True)  # ✅ add this
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -584,11 +584,16 @@ def add_booking():
     if request.method == "POST":
         customer_id = int(request.form["customer_id"])
         booking_type_id = int(request.form["booking_type_id"])
-        event_date = request.form["event_date"]
-        secondary_date = request.form.get("secondary_date")
+        
+        event_date = datetime.strptime(request.form["event_date"], "%Y-%m-%d").date()
+        secondary_date_str = request.form.get("secondary_date")
+        secondary_date = datetime.strptime(secondary_date_str, "%Y-%m-%d").date() if secondary_date_str else None
+
         expected_income = float(request.form["expected_income"])
         paid_status = request.form["paid_status"]
         partial_amount = request.form.get("partial_amount")
+        partial_amount = float(partial_amount) if (paid_status == "Partial" and partial_amount) else None
+
         notes = request.form.get("notes")
 
         new_booking = Booking(
@@ -598,7 +603,7 @@ def add_booking():
             secondary_date=secondary_date,
             expected_income=expected_income,
             paid_status=paid_status,
-            partial_amount=partial_amount if paid_status == "Partial" else None,
+            partial_amount=partial_amount,
             notes=notes,
         )
         db.session.add(new_booking)
