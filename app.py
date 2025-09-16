@@ -11,7 +11,7 @@ import shutil
 import csv
 
 # --- Config ---
-APP_VERSION = "v0.6.7-dev"  # update manually when you push changes
+APP_VERSION = "v0.6.8-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -433,8 +433,8 @@ def workorders():
 def add_workorder():
     if request.method == "POST":
         customer_id = int(request.form["customer_id"])
+        order_types = request.form.getlist("order_types")
         description = request.form.get("description")
-        order_types = request.form.getlist("order_types")  
         priority = request.form.get("priority", "Medium")
         due_date_str = request.form.get("due_date")
         status = request.form.get("status", "New")
@@ -442,31 +442,25 @@ def add_workorder():
 
         due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date() if due_date_str else None
 
-        # Loop through each selected order type
         for ot in order_types:
-            # you could later connect this to WorkOrderType with pricing
-            price = 0.0
             new_order = WorkOrder(
                 customer_id=customer_id,
                 booking_id=int(booking_id) if booking_id else None,
                 description=description,
                 order_type=ot,
-                price=price,
+                price=0.0,
                 priority=priority,
                 due_date=due_date,
                 status=status
             )
             db.session.add(new_order)
-
         db.session.commit()
-        flash("Work order(s) added successfully!", "success")
 
-        # redirect back to booking page if created from there
+        flash("Work order(s) added successfully!", "success")
         if booking_id:
             return redirect(url_for("view_booking", booking_id=booking_id))
         return redirect(url_for("workorders"))
 
-    # --- GET ---
     booking_id = request.args.get("booking_id")
     preselected_customer = None
     if booking_id:
@@ -476,11 +470,10 @@ def add_workorder():
 
     customers = Customer.query.order_by(Customer.name.asc()).all()
     workorder_types = WorkOrderType.query.order_by(WorkOrderType.name.asc()).all()
-
     return render_template(
         "add_workorder.html",
         customers=customers,
-        workorder_types=workorder_types, 
+        workorder_types=workorder_types,
         preselected_customer=preselected_customer,
         booking_id=booking_id
     )
@@ -541,12 +534,12 @@ def add_workorder_type():
     return redirect(url_for("workorder_types"))
 
 @app.route("/settings/workordertypes/delete/<int:type_id>", methods=["POST"])
-def delete_workorder_type(type_id):
-    wtype = WorkOrderType.query.get_or_404(type_id)
-    db.session.delete(wtype)
+def delete_workordertype(type_id):
+    wt = WorkOrderType.query.get_or_404(type_id)
+    db.session.delete(wt)
     db.session.commit()
     flash("Work order type deleted!", "danger")
-    return redirect(url_for("workorder_types"))
+    return redirect(url_for("settings_workordertypes"))
 
 @app.route("/settings/workordertypes/edit/<int:type_id>", methods=["GET", "POST"])
 def edit_workorder_type(type_id):
@@ -559,6 +552,19 @@ def edit_workorder_type(type_id):
         return redirect(url_for("workorder_types"))
     return render_template("edit_workorder_type.html", workorder_type=wt)
 
+@app.route("/settings/workordertypes", methods=["GET", "POST"])
+def settings_workordertypes():
+    if request.method == "POST":
+        name = request.form["name"]
+        if name:
+            new_type = WorkOrderType(name=name)
+            db.session.add(new_type)
+            db.session.commit()
+            flash("Work order type added!", "success")
+        return redirect(url_for("settings_workordertypes"))
+
+    workorder_types = WorkOrderType.query.order_by(WorkOrderType.name.asc()).all()
+    return render_template("settings_workordertypes.html", workorder_types=workorder_types)
 # ------------------ Bookings ------------------
 
 @app.route("/bookings")
@@ -575,64 +581,32 @@ def bookings():
 def add_booking():
     if request.method == "POST":
         customer_id = int(request.form["customer_id"])
-        booking_type = request.form["booking_type"]
-        event_date = datetime.strptime(request.form["event_date"], "%Y-%m-%d").date()
-        secondary_date_str = request.form.get("secondary_date")
-        secondary_date = datetime.strptime(secondary_date_str, "%Y-%m-%d").date() if secondary_date_str else None
-        expected_income = float(request.form.get("expected_income", 0))
-        paid_status = request.form.get("paid_status", "Pending")
-        notes = request.form.get("notes")
         booking_type_id = int(request.form["booking_type_id"])
+        event_date = request.form["event_date"]
+        secondary_date = request.form.get("secondary_date")
+        expected_income = float(request.form["expected_income"])
+        paid_status = request.form["paid_status"]
+        partial_amount = request.form.get("partial_amount")
+        notes = request.form.get("notes")
 
-        
         new_booking = Booking(
             customer_id=customer_id,
-            booking_type=booking_type,
+            booking_type_id=booking_type_id,
             event_date=event_date,
             secondary_date=secondary_date,
             expected_income=expected_income,
             paid_status=paid_status,
-            notes=notes
+            partial_amount=partial_amount if paid_status == "Partial" else None,
+            notes=notes,
         )
         db.session.add(new_booking)
-        db.session.commit()
-
-        # --- Transaction logging ---
-        customer = Customer.query.get(customer_id)
-        if paid_status == "Paid":
-            txn = Transaction(
-                type="Income",
-                category="Booking",
-                party=customer.name,
-                description=f"{booking_type} Booking",
-                amount=expected_income,
-                status="Paid",
-                date=datetime.utcnow().date()
-            )
-            db.session.add(txn)
-
-        elif paid_status == "Partial":
-            partial_amount = float(request.form.get("partial_amount", 0))
-            if partial_amount > 0:
-                txn = Transaction(
-                    type="Income",
-                    category="Booking",
-                    party=customer.name,
-                    description=f"{booking_type} Booking (Partial Payment)",
-                    amount=partial_amount,
-                    status="Paid",
-                    date=datetime.utcnow().date(),
-                )
-                db.session.add(txn)
-
         db.session.commit()
         flash("Booking added successfully!", "success")
         return redirect(url_for("bookings"))
 
-    # --- GET request: fetch customers & job types ---
     customers = Customer.query.order_by(Customer.name.asc()).all()
-    job_types = JobType.query.order_by(JobType.name.asc()).all()
-    return render_template("add_booking.html", customers=customers, job_types=job_types)
+    booking_types = BookingType.query.order_by(BookingType.name.asc()).all()
+    return render_template("add_booking.html", customers=customers, booking_types=booking_types)
 
 @app.route("/bookings/edit/<int:booking_id>", methods=["GET", "POST"])
 def edit_booking(booking_id):
@@ -1059,6 +1033,20 @@ def add_bookingtype():
         else:
             flash("Booking type already exists!", "warning")
     return redirect(url_for("bookingtypes"))
+
+@app.route("/settings/bookingtypes", methods=["GET", "POST"])
+def settings_bookingtypes():
+    if request.method == "POST":
+        name = request.form["name"]
+        if name:
+            new_type = BookingType(name=name)
+            db.session.add(new_type)
+            db.session.commit()
+            flash("Booking type added!", "success")
+        return redirect(url_for("settings_bookingtypes"))
+
+    booking_types = BookingType.query.order_by(BookingType.name.asc()).all()
+    return render_template("settings_bookingtypes.html", booking_types=booking_types)
 
 @app.route("/settings/bookingtypes/delete/<int:type_id>", methods=["POST"])
 def delete_bookingtype(type_id):
