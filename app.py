@@ -11,7 +11,7 @@ import shutil
 import csv
 
 # --- Config ---
-APP_VERSION = "v0.6.15-dev"  # update manually when you push changes
+APP_VERSION = "v0.6.16-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -733,15 +733,16 @@ def edit_customer(customer_id):
 @app.route("/customers/delete/<int:customer_id>", methods=["POST"])
 def delete_customer(customer_id):
     customer = Customer.query.get_or_404(customer_id)
+
+    # Check if the customer has related records
+    if customer.bookings or customer.invoices or customer.workorders:
+        flash("Cannot delete customer with existing bookings, invoices, or work orders. Remove those first.", "warning")
+        return redirect(url_for("customers"))
+
     db.session.delete(customer)
     db.session.commit()
     flash("Customer deleted!", "danger")
     return redirect(url_for("customers"))
-
-@app.route("/customers/<int:customer_id>")
-def view_customer(customer_id):
-    customer = Customer.query.get_or_404(customer_id)
-    return render_template("view_customer.html", customer=customer)
 
 
 @app.before_request
