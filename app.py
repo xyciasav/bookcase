@@ -646,6 +646,16 @@ def edit_booking(booking_id):
     booking_types = BookingType.query.order_by(BookingType.name.asc()).all()
     return render_template("edit_booking.html", booking=booking, customers=customers, booking_types=booking_types)
 
+
+@app.route("/bookings/delete/<int:booking_id>", methods=["POST"])
+def delete_booking(booking_id):
+    booking = Booking.query.get_or_404(booking_id)
+    db.session.delete(booking)
+    db.session.commit()
+    flash("Booking deleted!", "danger")
+    return redirect(url_for("bookings"))
+
+
 # ------------------ Customers ------------------
 
 @app.route("/customers")
