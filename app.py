@@ -11,7 +11,7 @@ import shutil
 import csv
 
 # --- Config ---
-APP_VERSION = "v0.6.9-dev"  # update manually when you push changes
+APP_VERSION = "v0.6.10-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -59,6 +59,10 @@ class WorkOrder(db.Model):
 class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customer.id"), nullable=False)
+
+    booking_type_id = db.Column(db.Integer, db.ForeignKey("booking_type.id"), nullable=False)
+    booking_type = db.relationship("BookingType", backref="bookings")
+
     event_date = db.Column(db.Date, nullable=False)
     secondary_date = db.Column(db.Date, nullable=True)
     expected_income = db.Column(db.Float, nullable=False, default=0.0)
@@ -69,8 +73,7 @@ class Booking(db.Model):
     customer = db.relationship("Customer", back_populates="bookings")
     workorders = db.relationship("WorkOrder", back_populates="booking", lazy=True)
     invoices = db.relationship("Invoice", back_populates="booking", lazy=True)
-    booking_type_id = db.Column(db.Integer, db.ForeignKey("booking_type.id"), nullable=False)
-    booking_type = db.relationship("BookingType", backref="bookings")
+
     
 class Customer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -1013,15 +1016,14 @@ def edit_jobtype(type_id):
     return render_template("edit_jobtype.html", jobtype=jt)
 
 @app.before_request
-def seed_workorder_types():
-    if not hasattr(app, "workordertypes_seeded"):
-        if WorkOrderType.query.count() == 0:
-            defaults = ["Photography", "Videography", "Design", "Printing", "Editing"]
+def seed_booking_types():
+    if not hasattr(app, "bookingtypes_seeded"):
+        if BookingType.query.count() == 0:
+            defaults = ["Wedding Package", "School Package", "Business Package"]
             for d in defaults:
-                db.session.add(WorkOrderType(name=d, base_price=0.0))
+                db.session.add(BookingType(name=d))
             db.session.commit()
-        app.workordertypes_seeded = True
-
+        app.bookingtypes_seeded = True
 
 # --------------------Booking Types --------------
 

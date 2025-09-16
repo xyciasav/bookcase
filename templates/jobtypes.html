@@ -78,5 +78,17 @@
   </table>
 </div>
 
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" id="settingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Settings
+  </a>
+  <ul class="dropdown-menu" aria-labelledby="settingsDropdown">
+    <li><a class="dropdown-item" href="{{ url_for('jobtypes') }}">Job Types</a></li>
+    <li><a class="dropdown-item" href="{{ url_for('bookingtypes') }}">Booking Types</a></li>
+    <li><a class="dropdown-item" href="{{ url_for('workorder_types') }}">Work Order Types</a></li>
+  </ul>
+</li>
+
+
 <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">← Back</a>
 {% endblock %}
