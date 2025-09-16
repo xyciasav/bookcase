@@ -30,7 +30,8 @@
 <table class="table table-striped">
   <thead>
     <tr>
-      <th>Name</th>
+      <th>Contact Name</th>
+      <th>Business</th>
       <th>Email</th>
       <th>Phone</th>
       <th>Source</th>
@@ -41,7 +42,8 @@
   <tbody>
     {% for lead in leads %}
     <tr>
-      <td>{{ lead.name }}</td>
+      <td>{{ lead.contact.name }}</td>
+      <td>{{ lead.business_name or '' }}</td>
       <td>{{ lead.email or '' }}</td>
       <td>{{ lead.phone or '' }}</td>
       <td>{{ lead.source or '' }}</td>
