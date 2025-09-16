@@ -11,7 +11,7 @@ import shutil
 import csv
 
 # --- Config ---
-APP_VERSION = "v0.6.11-dev"  # update manually when you push changes
+APP_VERSION = "v0.6.12-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -62,7 +62,7 @@ class Booking(db.Model):
 
     booking_type_id = db.Column(db.Integer, db.ForeignKey("booking_type.id"), nullable=False)
     booking_type = db.relationship("BookingType", backref="bookings")
-
+    partial_amount = db.Column(db.Float, nullable=True)
     event_date = db.Column(db.Date, nullable=False)
     secondary_date = db.Column(db.Date, nullable=True)
     expected_income = db.Column(db.Float, nullable=False, default=0.0)
@@ -1014,6 +1014,16 @@ def edit_jobtype(type_id):
         flash("Job type updated!", "success")
         return redirect(url_for("jobtypes"))
     return render_template("edit_jobtype.html", jobtype=jt)
+
+@app.before_request
+def seed_workorder_types():
+    if not hasattr(app, "workordertypes_seeded"):
+        if WorkOrderType.query.count() == 0:
+            defaults = ["Photography", "Videography", "Design", "Editing"]
+            for d in defaults:
+                db.session.add(WorkOrderType(name=d, base_price=0.0))
+            db.session.commit()
+        app.workordertypes_seeded = True
 
 @app.before_request
 def seed_booking_types():
