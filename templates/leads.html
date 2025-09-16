@@ -42,7 +42,7 @@
   <tbody>
     {% for lead in leads %}
     <tr>
-      <td>{{ lead.contact.name }}</td>
+      <td>{{ lead.contact_name }}</td>
       <td>{{ lead.business_name or '' }}</td>
       <td>{{ lead.email or '' }}</td>
       <td>{{ lead.phone or '' }}</td>
