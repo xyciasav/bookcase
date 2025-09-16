@@ -11,7 +11,7 @@ import shutil
 import csv
 
 # --- Config ---
-APP_VERSION = "v0.6.13-dev"  # update manually when you push changes
+APP_VERSION = "v0.6.15-dev"  # update manually when you push changes
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -608,6 +608,22 @@ def add_booking():
         )
         db.session.add(new_booking)
         db.session.commit()
+
+        # 🔹 Add transaction if Paid or Partial
+        if paid_status in ["Paid", "Partial"]:
+            amount = expected_income if paid_status == "Paid" else partial_amount
+            txn = Transaction(
+                type="Income",
+                category="Booking",
+                party=new_booking.customer.name,
+                description=f"Booking #{new_booking.id} ({new_booking.booking_type.name})",
+                amount=amount,
+                status="Paid",
+                date=datetime.utcnow().date(),
+            )
+            db.session.add(txn)
+            db.session.commit()
+
         flash("Booking added successfully!", "success")
         return redirect(url_for("bookings"))
 
@@ -621,7 +637,7 @@ def edit_booking(booking_id):
 
     if request.method == "POST":
         booking.customer_id = int(request.form["customer_id"])
-        booking.booking_type_id = int(request.form["booking_type_id"])  # correct field
+        booking.booking_type_id = int(request.form["booking_type_id"])
 
         # Dates
         booking.event_date = datetime.strptime(request.form["event_date"], "%Y-%m-%d").date()
@@ -639,6 +655,22 @@ def edit_booking(booking_id):
         booking.notes = request.form.get("notes")
 
         db.session.commit()
+
+        # 🔹 Add new transaction if Paid or Partial
+        if booking.paid_status in ["Paid", "Partial"]:
+            amount = booking.expected_income if booking.paid_status == "Paid" else booking.partial_amount
+            txn = Transaction(
+                type="Income",
+                category="Booking",
+                party=booking.customer.name,
+                description=f"Booking #{booking.id} ({booking.booking_type.name})",
+                amount=amount,
+                status="Paid",
+                date=datetime.utcnow().date(),
+            )
+            db.session.add(txn)
+            db.session.commit()
+
         flash("Booking updated successfully!", "success")
         return redirect(url_for("bookings"))
 
