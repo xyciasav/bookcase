@@ -621,31 +621,30 @@ def edit_booking(booking_id):
 
     if request.method == "POST":
         booking.customer_id = int(request.form["customer_id"])
-        booking.booking_type = request.form["booking_type"]
+        booking.booking_type_id = int(request.form["booking_type_id"])  # correct field
+
+        # Dates
         booking.event_date = datetime.strptime(request.form["event_date"], "%Y-%m-%d").date()
         secondary_date_str = request.form.get("secondary_date")
         booking.secondary_date = datetime.strptime(secondary_date_str, "%Y-%m-%d").date() if secondary_date_str else None
+
+        # Money
         booking.expected_income = float(request.form.get("expected_income", 0))
         booking.paid_status = request.form.get("paid_status", "Pending")
-        booking.notes = request.form.get("notes")
-        booking_type_id = int(request.form["booking_type_id"])
 
-        
+        partial_amount = request.form.get("partial_amount")
+        booking.partial_amount = float(partial_amount) if booking.paid_status == "Partial" and partial_amount else None
+
+        # Other
+        booking.notes = request.form.get("notes")
+
         db.session.commit()
         flash("Booking updated successfully!", "success")
         return redirect(url_for("bookings"))
 
     customers = Customer.query.order_by(Customer.name.asc()).all()
-    return render_template("edit_booking.html", booking=booking, customers=customers)
-
-@app.route("/bookings/delete/<int:booking_id>", methods=["POST"])
-def delete_booking(booking_id):
-    booking = Booking.query.get_or_404(booking_id)
-    db.session.delete(booking)
-    db.session.commit()
-    flash("Booking deleted!", "danger")
-    return redirect(url_for("bookings"))
-
+    booking_types = BookingType.query.order_by(BookingType.name.asc()).all()
+    return render_template("edit_booking.html", booking=booking, customers=customers, booking_types=booking_types)
 
 # ------------------ Customers ------------------
 
