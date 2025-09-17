@@ -11,6 +11,7 @@
     <select name="status" class="form-select">
       <option value="">All Status</option>
       <option value="New" {% if status_filter=="New" %}selected{% endif %}>New</option>
+      <option value="In Progress" {% if status_filter=="In Progress" %}selected{% endif %}>In Progress</option>
       <option value="Contacted" {% if status_filter=="Contacted" %}selected{% endif %}>Contacted</option>
       <option value="Converted" {% if status_filter=="Converted" %}selected{% endif %}>Converted</option>
     </select>
